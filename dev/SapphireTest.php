@@ -177,6 +177,10 @@ class SapphireTest extends PHPUnit_Framework_TestCase {
 			return;
 		}
 		
+		//nest config and injector for each test so they are effectively sandboxed per test
+		Config::nest();
+		Injector::nest();
+
 		// Mark test as being run
 		$this->originalIsRunningTest = self::$is_running_test;
 		self::$is_running_test = true;
@@ -501,6 +505,9 @@ class SapphireTest extends PHPUnit_Framework_TestCase {
 			$controller->response->setStatusCode(200);
 			$controller->response->removeHeader('Location');
 		}
+		//unnest injector / config now that tests are over
+		Injector::unnest();
+		Config::unnest();
 	}
 
 	public static function assertContains(
