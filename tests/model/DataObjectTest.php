@@ -154,6 +154,29 @@ class DataObjectTest extends SapphireTest {
 	}
 
 	/**
+	 * Check that deleting an object with no ID doesn't delete all/any records
+	 */
+	public function testDeleteNoID() {
+		$numPlayers = DataObjectTest_Player::get()->count();
+		$this->assertNotEmpty($numPlayers);
+
+		$newPlayer = new DataObjectTest_Player();
+		$fail = true;
+		try {
+			$newPlayer->delete();
+		}
+		catch (LogicException $e) {
+			$fail = false;
+		}
+
+		if ($fail) {
+			$this->fail('No LogicException thrown when deleting non existent object');
+		}
+
+		$this->assertEquals($numPlayers, DataObjectTest_Player::get()->count());
+	}
+
+	/**
 	 * Test methods that get DataObjects
 	 *   - DataObject::get()
 	 *       - All records of a DataObject
