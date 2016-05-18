@@ -215,6 +215,20 @@ class Debug {
 	 * Caution: The error levels default to E_ALL is the site is in dev-mode (set in main.php).
 	 */
 	public static function loadErrorHandlers() {
+		global $ERRORSTACK;
+		// report any errors that were logged prior to this point
+		if (!empty($ERRORSTACK)) {
+			foreach ($ERRORSTACK as $error) {
+				call_user_func_array('errorHandler', $error);
+			}
+		}
+		$ERRORSTACK = null;
+
+		//clear our temporary error handlers
+		restore_error_handler();
+		restore_exception_handler();
+
+		//set the new handlers
 		set_error_handler('errorHandler', error_reporting());
 		set_exception_handler('exceptionHandler');
 	}

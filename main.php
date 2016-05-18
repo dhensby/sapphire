@@ -52,10 +52,105 @@ if (version_compare(phpversion(), '5.3.2', '<')) {
  * @see Director::direct()
  */
 
+//used to store errors in our early error handler
+global $ERRORSTACK;
+$ERRORSTACK = array();
+
 /**
  * Include the defines that set BASE_PATH, etc
  */
 require_once('core/Constants.php');
+
+//set up a custom error handler to catch errors so we can send 500 responses on fatal errors
+// the default PHP error handler will send a 200 response on fatal errors when displat errors is on
+// this handler will send a 500.
+set_error_handler($errorHandler = function($errno, $errstr, $errfile, $errline) {
+	global $ERRORSTACK;
+	// add the error to the stack
+	$ERRORSTACK[] = func_get_args();
+
+	// if we get a fatal error, then we need to echo our error stack and exit
+	switch ($errno) {
+		case E_ERROR:
+		case E_CORE_ERROR:
+		case E_USER_ERROR:
+		case E_COMPILE_ERROR:
+		case E_RECOVERABLE_ERROR:
+			//set the status code if we can
+			if (!headers_sent()) {
+				header($_SERVER['SERVER_PROTOCOL'] . " 500 Internal Server Error");
+				header('Content-Type: text/html');
+			}
+
+			foreach ($ERRORSTACK as $error) {
+				//determine error type
+				list($num, $msg, $file, $line) = $error;
+				switch ($num) {
+					case E_ERROR:
+					case E_CORE_ERROR:
+					case E_USER_ERROR:
+					case E_COMPILE_ERROR:
+						$type = 'Fatal error';
+						break;
+					case E_WARNING:
+					case E_CORE_WARNING:
+					case E_USER_WARNING:
+						$type = 'Warning';
+						break;
+					case E_NOTICE:
+					case E_USER_NOTICE:
+					case E_DEPRECATED:
+					case E_USER_DEPRECATED:
+					case E_STRICT:
+						$type = 'Notice';
+						break;
+					case E_RECOVERABLE_ERROR:
+						$type = 'Recoverable error';
+						break;
+					default:
+						$type = 'Unknown error';
+				}
+				//create the standard error output
+				$message = sprintf(
+					'<br /><b>%s</b>: %s in <b>%s</b> on line <b>%d</b><br />',
+					htmlentities($type),
+					htmlentities($msg),
+					htmlentities($file),
+					htmlentities($line)
+				);
+			}
+
+			// log to the error log
+			error_log('PHP ' . html_entity_decode(strip_tags(str_replace("\n", '', $message))));
+
+			//display the errors in the browser if appropriate
+			if (ini_get('display_errors')) {
+				echo $message;
+			}
+			// exit with the latest error code
+			exit(intval($errno));
+	}
+}, error_reporting());
+
+//set up a custom exception handler to catch errors so we can send 500 responses on fatal errors
+// the default PHP error handler will send a 200 response on fatal errors when display errors is on
+// this handler will send a 500.
+set_exception_handler(function (Exception $exception) use($errorHandler) {
+	//call the error handler
+	$errorHandler(
+		E_USER_ERROR,
+		sprintf(
+			"Uncaught exception '%s' with message '%s' in %s:%d \nStack trace: \n%s",
+			get_class($exception),
+			$exception->getMessage(),
+			$exception->getFile(),
+			$exception->getLine(),
+			$exception->getTraceAsString()
+		),
+		$exception->getFile(),
+		$exception->getLine()
+	);
+});
 
 // IIS will sometimes generate this.
 if(!empty($_SERVER['HTTP_X_ORIGINAL_URL'])) {
