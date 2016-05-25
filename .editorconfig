@@ -26,3 +26,4 @@ insert_final_newline = false
 [admin/thirdparty/**]
 trim_trailing_whitespace = false
 insert_final_newline = false
+test
