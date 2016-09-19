@@ -171,6 +171,7 @@ class Director implements TemplateGlobalProvider {
 
 			$res = RequestProcessor::singleton()->postRequest($request, $response, $model);
 			if ($res !== false) {
+			    $response->prepare($request);
 				$response->send();
 				exit;
 			} else {
@@ -181,7 +182,7 @@ class Director implements TemplateGlobalProvider {
 		}
 
 		// No result of handling the request - 404
-		Response::create('404 Not Found', 404)->send();
+		Response::create('404 Not Found', 404)->prepare($request)->send();
 		exit(1);
 	}
 
@@ -341,10 +342,10 @@ class Director implements TemplateGlobalProvider {
 	 * Handle an HTTP request, defined with a HTTPRequest object.
 	 *
 	 * @skipUpgrade
-	 * @param HTTPRequest $request
+	 * @param Request $request
 	 * @param Session $session
 	 * @param DataModel $model
-	 * @return HTTPResponse|string
+	 * @return Response|string
 	 */
 	protected static function handleRequest(Request $request, Session $session, DataModel $model) {
 		$rules = Director::config()->get('rules');
@@ -362,40 +363,33 @@ class Director implements TemplateGlobalProvider {
 				}
 			}
 
-			if (($arguments = $request->match($pattern, true)) !== false) {
-				Debug::show($controllerOptions);die;
-				$request->setRouteParams($controllerOptions);
+			if (($arguments = self::match($request, $pattern, true)) !== false) {
+				//$request->setRouteParams($controllerOptions);
 				// controllerOptions provide some default arguments
 				$arguments = array_merge($controllerOptions, $arguments);
 
 				// Pop additional tokens from the tokenizer if necessary
 				if (isset($controllerOptions['_PopTokeniser'])) {
-					$request->shift($controllerOptions['_PopTokeniser']);
+					//$request->shift($controllerOptions['_PopTokeniser']);
 				}
 
-				// Handle redirection
-				if (isset($arguments['Redirect'])) {
-					return "redirect:" . Director::absoluteURL($arguments['Redirect'], true);
+                // Find the controller name
+                $controller = $arguments['Controller'];
+                Director::$urlParams = $arguments;
+                $controllerObj = Injector::inst()->create($controller);
+                $controllerObj->setSession($session);
 
-				} else {
-					// Find the controller name
-					$controller = $arguments['Controller'];
-					Director::$urlParams = $arguments;
-					$controllerObj = Injector::inst()->create($controller);
-					$controllerObj->setSession($session);
+                try {
+                    $result = $controllerObj->handleRequest($request, $model);
+                } catch(HTTPResponse_Exception $responseException) {
+                    $result = $responseException->getResponse();
+                }
+                if (!is_object($result) || $result instanceof Response) {
+                    return $result;
+                }
 
-					try {
-						$result = $controllerObj->handleRequest($request, $model);
-					} catch(HTTPResponse_Exception $responseException) {
-						$result = $responseException->getResponse();
-					}
-					if (!is_object($result) || $result instanceof HTTPResponse) {
-						return $result;
-					}
-
-					user_error("Bad result from url " . $request->getURL() . " handled by " .
-						get_class($controllerObj)." controller: ".get_class($result), E_USER_WARNING);
-				}
+                user_error("Bad result from url " . $request->getPathInfo() . " handled by " .
+                    get_class($controllerObj)." controller: ".get_class($result), E_USER_WARNING);
 			}
 		}
 
@@ -860,6 +854,110 @@ class Director implements TemplateGlobalProvider {
 
 		return Director::protocol() . $login .  $_SERVER['HTTP_HOST'] . Director::baseURL();
 	}
+
+    /**
+     * @param Request $request
+     * @param string $pattern
+     * @param bool $shiftOnSuccess
+     * @return array|bool
+     */
+	public static function match($request, $pattern, $shiftOnSuccess = false) {
+        $uri = $request->getPathInfo();
+        $dirParts = preg_split('|/+|', $uri);
+        $extension = '';
+        if(preg_match('/^.*\.([A-Za-z][A-Za-z0-9]*)$/', $uri, $matches)) {
+            $extension = $matches[1];
+        }
+        // Check if a specific method is required
+        if(preg_match('/^([A-Za-z]+) +(.*)$/', $pattern, $matches)) {
+            $requiredMethod = strtoupper($matches[1]);
+            if($requiredMethod != $request->getMethod()) return false;
+
+            // If we get this far, we can match the URL pattern as usual.
+            $pattern = $matches[2];
+        }
+
+        // Special case for the root URL controller
+        if(!$pattern) {
+            return ($dirParts == array()) ? array('Matched' => true) : false;
+        }
+
+        // Check for the '//' marker that represents the "shifting point"
+        $doubleSlashPoint = strpos($pattern, '//');
+        if($doubleSlashPoint !== false) {
+            $shiftCount = substr_count(substr($pattern,0,$doubleSlashPoint), '/') + 1;
+            $pattern = str_replace('//', '/', $pattern);
+            $patternParts = explode('/', $pattern);
+
+
+        } else {
+            $patternParts = explode('/', $pattern);
+            $shiftCount = sizeof($patternParts);
+        }
+
+        // Filter out any "empty" matching parts - either from an initial / or a trailing /
+        $patternParts = array_values(array_filter($patternParts));
+
+        $arguments = array();
+        foreach($patternParts as $i => $part) {
+            $part = trim($part);
+
+            // Match a variable
+            if(isset($part[0]) && $part[0] == '$') {
+                // A variable ending in ! is required
+                if(substr($part,-1) == '!') {
+                    $varRequired = true;
+                    $varName = substr($part,1,-1);
+                } else {
+                    $varRequired = false;
+                    $varName = substr($part,1);
+                }
+
+                // Fail if a required variable isn't populated
+                if($varRequired && !isset($dirParts[$i])) return false;
+
+                /** @skipUpgrade */
+                $key = "Controller";
+                $arguments[$varName] = isset($dirParts[$i]) ? $dirParts[$i] : null;
+                if( $part == '$Controller'
+                    && (
+                        !ClassInfo::exists($arguments[$key])
+                        || !is_subclass_of($arguments[$key], 'SilverStripe\\Control\\Controller')
+                    )
+                ) {
+
+                    return false;
+                }
+
+                // Literal parts with extension
+            } else if(isset($dirParts[$i]) && $dirParts[$i] . '.' . $extension == $part) {
+                continue;
+
+                // Literal parts must always be there
+            } else if(!isset($dirParts[$i]) || $dirParts[$i] != $part) {
+                return false;
+            }
+
+        }
+
+        if($shiftOnSuccess) {
+            //$request->shift($shiftCount);
+            // We keep track of pattern parts that we looked at but didn't shift off.
+            // This lets us say that we have *parsed* the whole URL even when we haven't *shifted* it all
+            //$request->unshiftedButParsedParts = sizeof($patternParts) - $shiftCount;
+        }
+
+        //$request->latestParams = $arguments;
+
+        // Load the arguments that actually have a value into $request->allParams
+        // This ensures that previous values aren't overridden with blanks
+        /*foreach($arguments as $k => $v) {
+            if($v || !isset($request->allParams[$k])) $request->allParams[$k] = $v;
+        }*/
+
+        if($arguments === array()) $arguments['_matched'] = true;
+        return $arguments;
+    }
 
 	/**
 	 * Skip any further processing and immediately respond with a redirect to the passed URL.

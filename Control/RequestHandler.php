@@ -15,6 +15,7 @@ use ReflectionClass;
 use Exception;
 use BadMethodCallException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * This class is the base class of any SilverStripe object that can be used to handle HTTP requests.
@@ -138,6 +139,35 @@ class RequestHandler extends ViewableData {
 		$this->model = $model;
 	}
 
+    /**
+     * A bootstrap for the handleRequest method
+     *
+     * @todo setDataModel and setRequest are redundantly called in parent::handleRequest() - sort this out
+     *
+     * @param Request $request
+     * @param DataModel $model
+     */
+    protected function beforeHandleRequest(Request $request, DataModel $model) {
+        // $handlerClass is used to step up the class hierarchy to implement url_handlers inheritance
+        if($this->brokenOnConstruct) {
+            $handlerClass = get_class($this);
+            throw new BadMethodCallException(
+                "parent::__construct() needs to be called on {$handlerClass}::__construct()"
+            );
+        }
+
+        //Set up the internal dependencies (request, response, datamodel)
+        $this->setRequest($request);
+        $this->setDataModel($model);
+    }
+
+    /**
+     * Cleanup for the handleRequest method
+     */
+    protected function afterHandleRequest() {
+
+    }
+
 	/**
 	 * Handles URL requests.
 	 *
@@ -156,19 +186,11 @@ class RequestHandler extends ViewableData {
 	 *
 	 * @param HTTPRequest $request The object that is reponsible for distributing URL parsing
 	 * @param DataModel $model
-	 * @return HTTPResponse|RequestHandler|string|array
+	 * @return Response|RequestHandler|string|array
 	 */
 	public function handleRequest(Request $request, DataModel $model) {
-		// $handlerClass is used to step up the class hierarchy to implement url_handlers inheritance
-		if($this->brokenOnConstruct) {
-			$handlerClass = get_class($this);
-			throw new BadMethodCallException(
-				"parent::__construct() needs to be called on {$handlerClass}::__construct()"
-			);
-		}
 
-		$this->setRequest($request);
-		$this->setDataModel($model);
+	    $this->beforeHandleRequest($request, $model);
 
 		$match = $this->findAction($request);
 
@@ -194,7 +216,7 @@ class RequestHandler extends ViewableData {
 		}
 
 		if(!$action) {
-			if(isset($_REQUEST['debug_request'])) {
+			if($this->getRequest()->get('debug_request') !== null) {
 				Debug::message("Action not set; using default action method name 'index'");
 			}
 			$action = "index";
@@ -220,8 +242,8 @@ class RequestHandler extends ViewableData {
 			$result = Security::permissionFailure(null, $e->getMessage());
 		}
 
-		if($result instanceof HTTPResponse && $result->isError()) {
-			if(isset($_REQUEST['debug_request'])) Debug::message("Rule resulted in HTTP error; breaking");
+		if($result instanceof Response && ($result->isClientError() || $result->isServerError())) {
+			if($this->getRequest()->get('debug_request') !== null) Debug::message("Rule resulted in HTTP error; breaking");
 			return $result;
 		}
 
@@ -248,6 +270,8 @@ class RequestHandler extends ViewableData {
 		} else {
 			return $this->httpError(404, "I can't handle sub-URLs $classMessage.");
 		}
+
+		$this->afterHandleRequest();
 	}
 
 	/**

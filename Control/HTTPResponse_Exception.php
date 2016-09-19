@@ -3,6 +3,7 @@
 namespace SilverStripe\Control;
 
 use Exception;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A {@link HTTPResponse} encapsulated in an exception, which can interrupt the processing flow and be caught by the
@@ -17,10 +18,13 @@ use Exception;
 class HTTPResponse_Exception extends Exception
 {
 
+    /**
+     * @var Response
+     */
 	protected $response;
 
 	/**
-	 * @param HTTPResponse|string $body Either the plaintext content of the error
+	 * @param Response|string $body Either the plaintext content of the error
 	 * message, or an HTTPResponse object representing it. In either case, the
 	 * $statusCode and $statusDescription will be the HTTP status of the resulting
 	 * response.
@@ -30,30 +34,27 @@ class HTTPResponse_Exception extends Exception
 	 */
 	public function __construct($body = null, $statusCode = null, $statusDescription = null)
 	{
-		if ($body instanceof HTTPResponse) {
+		if ($body instanceof Response) {
 			// statusCode and statusDescription should override whatever is passed in the body
 			if ($statusCode) {
-				$body->setStatusCode($statusCode);
-			}
-			if ($statusDescription) {
-				$body->setStatusDescription($statusDescription);
+				$body->setStatusCode($statusCode, $statusDescription);
 			}
 
 			$this->setResponse($body);
 		} else {
-			$response = new HTTPResponse($body, $statusCode, $statusDescription);
+			$response = Response::create($body)->setStatusCode($statusCode, $statusDescription);
 
 			// Error responses should always be considered plaintext, for security reasons
-			$response->addHeader('Content-Type', 'text/plain');
+			$response->headers->set('Content-Type', 'text/plain');
 
 			$this->setResponse($response);
 		}
 
-		parent::__construct($this->getResponse()->getBody(), $this->getResponse()->getStatusCode());
+		parent::__construct($this->getResponse()->getContent(), $this->getResponse()->getStatusCode());
 	}
 
 	/**
-	 * @return HTTPResponse
+	 * @return Response
 	 */
 	public function getResponse()
 	{
@@ -61,9 +62,9 @@ class HTTPResponse_Exception extends Exception
 	}
 
 	/**
-	 * @param HTTPResponse $response
+	 * @param Response $response
 	 */
-	public function setResponse(HTTPResponse $response)
+	public function setResponse(Response $response)
 	{
 		$this->response = $response;
 	}

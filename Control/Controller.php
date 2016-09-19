@@ -12,6 +12,7 @@ use SilverStripe\Security\BasicAuth;
 use SilverStripe\Security\Member;
 use SilverStripe\View\SSViewer;
 use SilverStripe\View\TemplateGlobalProvider;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -71,7 +72,7 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 *
 	 * Set in {@link handleRequest()}.
 	 *
-	 * @var HTTPResponse
+	 * @var Response
 	 */
 	protected $response;
 
@@ -156,16 +157,15 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 *
 	 * @todo setDataModel and setRequest are redundantly called in parent::handleRequest() - sort this out
 	 *
-	 * @param HTTPRequest $request
+	 * @param Request $request
 	 * @param DataModel $model
 	 */
-	protected function beforeHandleRequest(HTTPRequest $request, DataModel $model) {
+	protected function beforeHandleRequest(Request $request, DataModel $model) {
 		//Push the current controller to protect against weird session issues
 		$this->pushCurrent();
-		//Set up the internal dependencies (request, response, datamodel)
-		$this->setRequest($request);
-		$this->setResponse(new HTTPResponse());
-		$this->setDataModel($model);
+
+		parent::beforeHandleRequest($request, $model);
+
 		//kick off the init functionality
 		$this->doInit();
 
@@ -175,6 +175,10 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 * Cleanup for the handleRequest method
 	 */
 	protected function afterHandleRequest() {
+	    parent::afterHandleRequest();
+
+        $this->prepareResponse();
+
 		//Pop the current controller from the stack
 		$this->popCurrent();
 	}
@@ -198,25 +202,19 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 * @param HTTPRequest $request
 	 * @param DataModel $model
 	 *
-	 * @return HTTPResponse
+	 * @return Response
 	 */
-	public function handleRequest(HTTPRequest $request, DataModel $model) {
+	public function handleRequest(Request $request, DataModel $model) {
 		if (!$request) {
 			user_error("Controller::handleRequest() not passed a request!", E_USER_ERROR);
 		}
 
-		//set up the controller for the incoming request
-		$this->beforeHandleRequest($request, $model);
-
 		//if the before handler manipulated the response in a way that we shouldn't proceed, then skip our request
 		// handling
-		if (!$this->getResponse()->isFinished()) {
+		if (!$this->getResponse()->isRedirection() && !$this->getResponse()->isClientError()) {
 
 			//retrieve the response for the request
-			$response = parent::handleRequest($request, $model);
-
-			//prepare the response (we can receive an assortment of response types (strings/objects/HTTPResponses)
-			$this->prepareResponse($response);
+			parent::handleRequest($request, $model);
 		}
 
 		//after request work
@@ -230,10 +228,11 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 * Prepare the response (we can receive an assortment of response types (strings/objects/HTTPResponses) and
 	 * changes the controller response object appropriately
 	 *
-	 * @param HTTPResponse|Object $response
+	 * @param Response|Object $response
 	 */
-	protected function prepareResponse($response) {
-		if ($response instanceof HTTPResponse) {
+	protected function prepareResponse() {
+	    $response = $this->getResponse();
+		if ($response instanceof Response) {
 			if (isset($_REQUEST['debug_request'])) {
 				Debug::message(
 					"Request handler returned HTTPResponse object to $this->class controller;"
@@ -254,7 +253,7 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 				$response = $response->getViewer($this->getAction())->process($response);
 			}
 
-			$this->getResponse()->setBody($response);
+			$this->getResponse()->setContent($response);
 		}
 
 		//deal with content if appropriate

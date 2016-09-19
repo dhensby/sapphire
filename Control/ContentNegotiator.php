@@ -4,6 +4,7 @@ namespace SilverStripe\Control;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Object;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The content negotiator performs "text/html" or "application/xhtml+xml" switching. It does this through
@@ -65,7 +66,7 @@ class ContentNegotiator extends Object {
 	 * Returns true if negotiation is enabled for the given response. By default, negotiation is only
 	 * enabled for pages that have the xml header.
 	 *
-	 * @param HTTPResponse $response
+	 * @param Response $response
 	 * @return bool
 	 */
 	public static function enabled_for($response) {
@@ -87,9 +88,9 @@ class ContentNegotiator extends Object {
 	}
 
 	/**
-	 * @param HTTPResponse $response
+	 * @param Response $response
 	 */
-	public static function process(HTTPResponse $response) {
+	public static function process(Response $response) {
 		if(!self::enabled_for($response)) return;
 
 		$mimes = array(

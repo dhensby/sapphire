@@ -8,6 +8,7 @@ use SilverStripe\Core\Convert;
 use SilverStripe\Core\Config\Config;
 use InvalidArgumentException;
 use finfo;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A class with HTTP-related helpers. Like Debug, this is more a bundle of methods than a class.
@@ -348,15 +349,15 @@ class HTTP {
 	 * Omitting the $body argument or passing a string is deprecated; in these cases, the headers are
 	 * output directly.
 	 *
-	 * @param HTTPResponse $body
+	 * @param Response $response
 	 */
-	public static function add_cache_headers($body = null) {
+	public static function add_cache_headers($response = null) {
 		$cacheAge = self::$cache_age;
 
 		// Validate argument
-		if($body && !($body instanceof HTTPResponse)) {
-			user_error("HTTP::add_cache_headers() must be passed an HTTPResponse object", E_USER_WARNING);
-			$body = null;
+		if($response && !($response instanceof Response)) {
+			user_error("HTTP::add_cache_headers() must be passed an Response object", E_USER_WARNING);
+			$response = Response::create();
 		}
 
 		// Development sites have frequently changing templates; this can get stuffed up by the code
@@ -367,7 +368,7 @@ class HTTP {
 
 		// The headers have been sent and we don't have an HTTPResponse object to attach things to; no point in
 		// us trying.
-		if(headers_sent() && !$body) {
+		if(headers_sent()) {
 			return;
 		}
 
@@ -406,16 +407,13 @@ class HTTP {
 		}
 		else {
 			$contentDisposition = null;
-			if($body) {
+			if($response) {
 				// Grab header for checking. Unfortunately HTTPRequest uses a mistyped variant.
-				$contentDisposition = $body->getHeader('Content-disposition');
-				if (!$contentDisposition) {
-					$contentDisposition = $body->getHeader('Content-Disposition');
-				}
+				$contentDisposition = $response->headers->get('Content-Disposition');
 			}
 
 			if(
-				$body &&
+				$response &&
 				Director::is_https() &&
 				isset($_SERVER['HTTP_USER_AGENT']) &&
 				strstr($_SERVER['HTTP_USER_AGENT'], 'MSIE')==true &&
@@ -480,13 +478,7 @@ class HTTP {
 				$matchesEtag = !isset($_SERVER['HTTP_IF_NONE_MATCH']) || $_SERVER['HTTP_IF_NONE_MATCH'] == $etag;
 
 				if($ifModifiedSince >= self::$modification_date && $matchesEtag) {
-					if($body) {
-						$body->setStatusCode(304);
-						$body->setBody('');
-					} else {
-						header('HTTP/1.0 304 Not Modified');
-						die();
-					}
+                    $response->setNotModified();
 				}
 			}
 
@@ -495,24 +487,15 @@ class HTTP {
 		}
 
 		if(self::$etag) {
-			$responseHeaders['ETag'] = self::$etag;
-		}
-
-		// etag needs to be a quoted string according to HTTP spec
-		if (!empty($responseHeaders['ETag']) && 0 !== strpos($responseHeaders['ETag'], '"')) {
-			$responseHeaders['ETag'] = sprintf('"%s"', $responseHeaders['ETag']);
+		    $response->setEtag(self::$etag);
 		}
 
 		// Now that we've generated them, either output them or attach them to the HTTPResponse as appropriate
 		foreach($responseHeaders as $k => $v) {
-			if($body) {
-				// Set the header now if it's not already set.
-				if ($body->getHeader($k) === null) {
-					$body->addHeader($k, $v);
-				}
-			} elseif(!headers_sent()) {
-				header("$k: $v");
-			}
+            // Set the header now if it's not already set.
+            if ($response->headers->get($k) === null) {
+                $response->headers->set($k, $v);
+            }
 		}
 	}
 
