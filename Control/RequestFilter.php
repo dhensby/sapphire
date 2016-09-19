@@ -3,6 +3,8 @@
 namespace SilverStripe\Control;
 
 use SilverStripe\ORM\DataModel;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A request filter is an object that's executed before and after a
@@ -22,7 +24,7 @@ interface RequestFilter {
 	 * @param DataModel $model Current DataModel
 	 * @return boolean Whether to continue processing other filters. Null or true will continue processing (optional)
 	 */
-	public function preRequest(HTTPRequest $request, Session $session, DataModel $model);
+	public function preRequest(Request $request, Session $session, DataModel $model);
 
 	/**
 	 * Filter executed AFTER a request
@@ -32,5 +34,5 @@ interface RequestFilter {
 	 * @param DataModel $model Current DataModel
 	 * @return boolean Whether to continue processing other filters. Null or true will continue processing (optional)
 	 */
-	public function postRequest(HTTPRequest $request, HTTPResponse $response, DataModel $model);
+	public function postRequest(Request $request, Response $response, DataModel $model);
 }

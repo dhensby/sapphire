@@ -139,4 +139,4 @@ if(!isset($databaseConfig) || !isset($databaseConfig['database']) || !$databaseC
 
 // Direct away - this is the "main" function, that hands control to the appropriate controller
 DataModel::set_inst(new DataModel());
-Director::direct($request->getPathInfo(), DataModel::inst());
+Director::direct($request, DataModel::inst());

@@ -27,6 +27,7 @@ use Exception;
 use Page;
 use Page_Controller;
 use Subsite;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Implements a basic security model
@@ -252,22 +253,23 @@ class Security extends Controller implements TemplateGlobalProvider {
 	 *
 	 * The alreadyLoggedIn value can contain a '%s' placeholder that will be replaced with a link
 	 * to log in.
-	 * @return HTTPResponse
+	 * @return Response
 	 */
 	public static function permissionFailure($controller = null, $messageSet = null) {
 		self::set_ignore_disallowed_actions(true);
 
 		if(!$controller) $controller = Controller::curr();
 
-		if(Director::is_ajax()) {
-			$response = ($controller) ? $controller->getResponse() : new HTTPResponse();
+		$request = $controller->getRequest();
+
+		if($request->isXmlHttpRequest()) {
+			$response = ($controller) ? $controller->getResponse() : new Response();
 			$response->setStatusCode(403);
 			if(!Member::currentUser()) {
-				$response->setBody(_t('ContentController.NOTLOGGEDIN','Not logged in'));
-				$response->setStatusDescription(_t('ContentController.NOTLOGGEDIN','Not logged in'));
+				$response->setContent(_t('ContentController.NOTLOGGEDIN','Not logged in'));
 				// Tell the CMS to allow re-aunthentication
 				if(CMSSecurity::enabled()) {
-					$response->addHeader('X-Reauthenticate', '1');
+					$response->headers->add('X-Reauthenticate', '1');
 				}
 			}
 			return $response;
@@ -303,7 +305,7 @@ class Security extends Controller implements TemplateGlobalProvider {
 
 		// Work out the right message to show
 		if($member && $member->exists()) {
-			$response = ($controller) ? $controller->getResponse() : new HTTPResponse();
+			$response = ($controller) ? $controller->getResponse() : new Response();
 			$response->setStatusCode(403);
 
 			//If 'alreadyLoggedIn' is not specified in the array, then use the default
@@ -320,11 +322,11 @@ class Security extends Controller implements TemplateGlobalProvider {
 			$form->sessionMessage($message, 'warning');
 			Session::set('MemberLoginForm.force_message',1);
 			$loginResponse = $me->login();
-			if($loginResponse instanceof HTTPResponse) {
+			if($loginResponse instanceof Response) {
 				return $loginResponse;
 			}
 
-			$response->setBody((string)$loginResponse);
+			$response->setContent((string)$loginResponse);
 
 			$controller->extend('permissionDenied', $member);
 
@@ -336,7 +338,7 @@ class Security extends Controller implements TemplateGlobalProvider {
 		Session::set("Security.Message.message", $message);
 		Session::set("Security.Message.type", 'warning');
 
-		Session::set("BackURL", $_SERVER['REQUEST_URI']);
+		Session::set("BackURL", $request->getRequestUri());
 
 		// TODO AccessLogEntry needs an extension to handle permission denied errors
 		// Audit logging hook
@@ -344,7 +346,7 @@ class Security extends Controller implements TemplateGlobalProvider {
 
 		return $controller->redirect(
 			Config::inst()->get('SilverStripe\\Security\\Security', 'login_url')
-			. "?BackURL=" . urlencode($_SERVER['REQUEST_URI'])
+			. "?BackURL=" . urlencode($request->getRequestUri())
 		);
 	}
 
@@ -352,7 +354,7 @@ class Security extends Controller implements TemplateGlobalProvider {
 		parent::init();
 
 		// Prevent clickjacking, see https://developer.mozilla.org/en-US/docs/HTTP/X-Frame-Options
-		$this->getResponse()->addHeader('X-Frame-Options', $this->config()->frame_options);
+		$this->getResponse()->headers->set('X-Frame-Options', $this->config()->frame_options);
 	}
 
 	public function index() {
@@ -365,7 +367,7 @@ class Security extends Controller implements TemplateGlobalProvider {
 	 * @return string Class name of Authenticator
 	 */
 	protected function getAuthenticator() {
-		$authenticator = $this->getRequest()->requestVar('AuthenticationMethod');
+		$authenticator = $this->getRequest()->get('AuthenticationMethod');
 		if($authenticator) {
 			$authenticators = Authenticator::get_authenticators();
 			if (in_array($authenticator, $authenticators)) {

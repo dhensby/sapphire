@@ -14,6 +14,7 @@ use SilverStripe\View\ViewableData;
 use ReflectionClass;
 use Exception;
 use BadMethodCallException;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * This class is the base class of any SilverStripe object that can be used to handle HTTP requests.
@@ -48,7 +49,7 @@ use BadMethodCallException;
 class RequestHandler extends ViewableData {
 
 	/**
-	 * @var HTTPRequest $request The request object that the controller was called with.
+	 * @var Request $request The request object that the controller was called with.
 	 * Set in {@link handleRequest()}. Useful to generate the {}
 	 */
 	protected $request = null;
@@ -122,8 +123,6 @@ class RequestHandler extends ViewableData {
 	public function __construct() {
 		$this->brokenOnConstruct = false;
 
-		$this->setRequest(new NullHTTPRequest());
-
 		// This will prevent bugs if setDataModel() isn't called.
 		$this->model = DataModel::inst();
 
@@ -159,7 +158,7 @@ class RequestHandler extends ViewableData {
 	 * @param DataModel $model
 	 * @return HTTPResponse|RequestHandler|string|array
 	 */
-	public function handleRequest(HTTPRequest $request, DataModel $model) {
+	public function handleRequest(Request $request, DataModel $model) {
 		// $handlerClass is used to step up the class hierarchy to implement url_handlers inheritance
 		if($this->brokenOnConstruct) {
 			$handlerClass = get_class($this);
@@ -508,7 +507,7 @@ class RequestHandler extends ViewableData {
 	 * {@link handleAction()} or {@link handleRequest()} have been called,
 	 * which adds a reference to an actual {@link HTTPRequest} object.
 	 *
-	 * @return HTTPRequest|NullHTTPRequest
+	 * @return Request
 	 */
 	public function getRequest() {
 		return $this->request;
@@ -518,11 +517,25 @@ class RequestHandler extends ViewableData {
 	 * Typically the request is set through {@link handleAction()}
 	 * or {@link handleRequest()}, but in some based we want to set it manually.
 	 *
-	 * @param HTTPRequest $request
+	 * @param Request $request
 	 * @return $this
 	 */
 	public function setRequest($request) {
 		$this->request = $request;
 		return $this;
+	}
+
+	/**
+	 * Is the current request for media?
+	 *
+	 * @return bool
+	 */
+	public function isMediaRequest() {
+		$uri = $this->getRequest()->getPathInfo();
+		if(preg_match('/^.*\.([A-Za-z][A-Za-z0-9]*)$/', $uri, $matches)) {
+			$extension = $matches[1];
+			return in_array($extension, array('css', 'js', 'jpg', 'jpeg', 'gif', 'png', 'bmp', 'ico'));
+		}
+		return false;
 	}
 }

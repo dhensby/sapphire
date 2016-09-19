@@ -4,6 +4,8 @@ namespace SilverStripe\Control;
 
 use SilverStripe\ORM\DataModel;
 use SilverStripe\Core\ClassInfo;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Triggers a call to flush() on all implementors of Flushable.
@@ -19,8 +21,8 @@ class FlushRequestFilter implements RequestFilter {
 	 *
 	 * @return bool
 	 */
-	public function preRequest(HTTPRequest $request, Session $session, DataModel $model) {
-		if(array_key_exists('flush', $request->getVars())) {
+	public function preRequest(Request $request, Session $session, DataModel $model) {
+		if($request->query->get('flush') !== null) {
 			foreach(ClassInfo::implementorsOf('SilverStripe\\Core\\Flushable') as $class) {
 				$class::flush();
 			}
@@ -38,7 +40,7 @@ class FlushRequestFilter implements RequestFilter {
 	 *
 	 * @return bool
 	 */
-	public function postRequest(HTTPRequest $request, HTTPResponse $response, DataModel $model) {
+	public function postRequest(Request $request, Response $response, DataModel $model) {
 		return true;
 	}
 

@@ -4,6 +4,8 @@ namespace SilverStripe\Control;
 
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataModel;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Represents a request processer that delegates pre and post request handling to nested request filters
@@ -31,7 +33,7 @@ class RequestProcessor implements RequestFilter {
 		$this->filters = $filters;
 	}
 
-	public function preRequest(HTTPRequest $request, Session $session, DataModel $model) {
+	public function preRequest(Request $request, Session $session, DataModel $model) {
 		foreach ($this->filters as $filter) {
 			$res = $filter->preRequest($request, $session, $model);
 			if ($res === false) {
@@ -41,7 +43,7 @@ class RequestProcessor implements RequestFilter {
 		return null;
 	}
 
-	public function postRequest(HTTPRequest $request, HTTPResponse $response, DataModel $model) {
+	public function postRequest(Request $request, Response $response, DataModel $model) {
 		foreach ($this->filters as $filter) {
 			$res = $filter->postRequest($request, $response, $model);
 			if ($res === false) {

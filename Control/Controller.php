@@ -12,6 +12,7 @@ use SilverStripe\Security\BasicAuth;
 use SilverStripe\Security\Member;
 use SilverStripe\View\SSViewer;
 use SilverStripe\View\TemplateGlobalProvider;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Controllers are the cornerstone of all site functionality in SilverStripe. The {@link Director}
@@ -145,7 +146,7 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 */
 	public function setRequest($request) {
 		$return = parent::setRequest($request);
-		$this->setURLParams($this->getRequest()->allParams());
+		$this->setURLParams($this->getRequest()->attributes->all());
 
 		return $return;
 	}
@@ -329,23 +330,23 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 * Returns the HTTPResponse object that this controller is building up. Can be used to set the
 	 * status code and headers.
 	 *
-	 * @return HTTPResponse
+	 * @return Response
 	 */
 	public function getResponse() {
 		if (!$this->response) {
-			$this->setResponse(new HTTPResponse());
+			$this->setResponse(new Response());
 		}
 		return $this->response;
 	}
 
 	/**
-	 * Sets the HTTPResponse object that this controller is building up.
+	 * Sets the Response object that this controller is building up.
 	 *
-	 * @param HTTPResponse $response
+	 * @param Response $response
 	 *
 	 * @return $this
 	 */
-	public function setResponse(HTTPResponse $response) {
+	public function setResponse(Response $response) {
 		$this->response = $response;
 		return $this;
 	}
@@ -602,11 +603,12 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 *
 	 * @param string $url
 	 * @param int $code
-	 * @return HTTPResponse
+	 * @return Response
 	 */
 	public function redirect($url, $code = 302) {
-		if($this->getResponse()->getHeader('Location') && $this->getResponse()->getHeader('Location') != $url) {
-			user_error("Already directed to " . $this->getResponse()->getHeader('Location')
+		$response = $this->getResponse();
+		if($response->headers->get('Location') && $response->headers->get('Location') != $url) {
+			user_error("Already directed to " . $response->headers->get('Location')
 				. "; now trying to direct to $url", E_USER_WARNING);
 			return null;
 		}
@@ -616,7 +618,10 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 			$url = Director::baseURL() . $url;
 		}
 
-		return $this->getResponse()->redirect($url, $code);
+		$response->headers->set('Location', $url);
+		$response->setStatusCode($code);
+
+		return $response;
 	}
 
 	/**
@@ -627,7 +632,7 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 *
 	 * @uses redirect()
 	 *
-	 * @return bool|HTTPResponse
+	 * @return bool|Response
 	 */
 	public function redirectBack() {
 		// Don't cache the redirect back ever
@@ -638,13 +643,13 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 		// In edge-cases, this will be called outside of a handleRequest() context; in that case,
 		// redirect to the homepage - don't break into the global state at this stage because we'll
 		// be calling from a test context or something else where the global state is inappropraite
-		if($this->getRequest()) {
-			if($this->getRequest()->requestVar('BackURL')) {
-				$url = $this->getRequest()->requestVar('BackURL');
-			} else if($this->getRequest()->isAjax() && $this->getRequest()->getHeader('X-Backurl')) {
-				$url = $this->getRequest()->getHeader('X-Backurl');
-			} else if($this->getRequest()->getHeader('Referer')) {
-				$url = $this->getRequest()->getHeader('Referer');
+		if($request = $this->getRequest()) {
+			if($request->get('BackURL')) {
+				$url = $request->get('BackURL');
+			} else if($request->isXmlHttpRequest() && $request->headers->get('X-Backurl')) {
+				$url = $request->headers->get('X-Backurl');
+			} else if($request->headers->get('Referer')) {
+				$url = $request->headers->get('Referer');
 			}
 		}
 
@@ -667,7 +672,7 @@ class Controller extends RequestHandler implements TemplateGlobalProvider {
 	 * @return null|string
 	 */
 	public function redirectedTo() {
-		return $this->getResponse() && $this->getResponse()->getHeader('Location');
+		return $this->getResponse() && $this->getResponse()->headers->get('Location');
 	}
 
 	/**

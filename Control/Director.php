@@ -15,6 +15,8 @@ use SilverStripe\ORM\Versioning\Versioned;
 use SilverStripe\View\Requirements;
 use SilverStripe\View\Requirements_Backend;
 use SilverStripe\View\TemplateGlobalProvider;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Director is responsible for processing URLs, and providing environment information.
@@ -132,41 +134,11 @@ class Director implements TemplateGlobalProvider {
 	 *
 	 * @uses handleRequest() rule-lookup logic is handled by this.
 	 * @uses Controller::handleRequest() This handles the page logic for a Director::direct() call.
-	 * @param string $url
+	 * @param Request $request
 	 * @param DataModel $model
 	 * @throws HTTPResponse_Exception
 	 */
-	public static function direct($url, DataModel $model) {
-		// Validate $_FILES array before merging it with $_POST
-		foreach($_FILES as $k => $v) {
-			if (is_array($v['tmp_name'])) {
-				$v = ArrayLib::array_values_recursive($v['tmp_name']);
-				foreach($v as $tmpFile) {
-					if ($tmpFile && !is_uploaded_file($tmpFile)) {
-						user_error("File upload '$k' doesn't appear to be a valid upload", E_USER_ERROR);
-					}
-				}
-			} else {
-				if ($v['tmp_name'] && !is_uploaded_file($v['tmp_name'])) {
-					user_error("File upload '$k' doesn't appear to be a valid upload", E_USER_ERROR);
-				}
-			}
-		}
-
-		$req = new HTTPRequest(
-			(isset($_SERVER['X-HTTP-Method-Override']))
-				? $_SERVER['X-HTTP-Method-Override']
-				: $_SERVER['REQUEST_METHOD'],
-			$url,
-			$_GET,
-			ArrayLib::array_merge_recursive((array) $_POST, (array) $_FILES),
-			@file_get_contents('php://input')
-		);
-
-		$headers = self::extract_request_headers($_SERVER);
-		foreach ($headers as $header => $value) {
-			$req->addHeader($header, $value);
-		}
+	public static function direct(Request $request, DataModel $model) {
 
 		// Initiate an empty session - doesn't initialize an actual PHP session until saved (see below)
 		$session = Session::create(isset($_SESSION) ? $_SESSION : array());
@@ -176,59 +148,41 @@ class Director implements TemplateGlobalProvider {
 			$session->inst_start();
 		}
 
-		$output = RequestProcessor::singleton()->preRequest($req, $session, $model);
+		$output = RequestProcessor::singleton()->preRequest($request, $session, $model);
 
 		if ($output === false) {
 			// @TODO Need to NOT proceed with the request in an elegant manner
 			throw new HTTPResponse_Exception(_t('Director.INVALID_REQUEST', 'Invalid request'), 400);
 		}
 
-		$result = Director::handleRequest($req, $session, $model);
+		$result = Director::handleRequest($request, $session, $model);
 
 		// Save session data. Note that inst_save() will start/resume the session if required.
 		$session->inst_save();
 
-		// Return code for a redirection request
-		if (is_string($result) && substr($result, 0, 9) == 'redirect:') {
-			$url = substr($result, 9);
-
-			if (Director::is_cli()) {
-				// on cli, follow SilverStripe redirects automatically
-				Director::direct(
-					str_replace(Director::absoluteBaseURL(), '', $url),
-					DataModel::inst()
-				);
-				return;
-			} else {
-				$response = new HTTPResponse();
-				$response->redirect($url);
-				$res = RequestProcessor::singleton()->postRequest($req, $response, $model);
-
-				if ($res !== false) {
-					$response->output();
-				}
-			}
-		// Handle a controller
-		} elseif ($result) {
-			if ($result instanceof HTTPResponse) {
+		if ($result) {
+			if ($result instanceof Response) {
 				$response = $result;
 
 			} else {
-				$response = new HTTPResponse();
-				$response->setBody($result);
+				$response = new Response();
+				$response->setContent($result);
 			}
 
-			$res = RequestProcessor::singleton()->postRequest($req, $response, $model);
+			$res = RequestProcessor::singleton()->postRequest($request, $response, $model);
 			if ($res !== false) {
-				$response->output();
+				$response->send();
+				exit;
 			} else {
 				// @TODO Proper response here.
 				throw new HTTPResponse_Exception("Invalid response");
 			}
 
-
-			//$controllerObj->getSession()->inst_save();
 		}
+
+		// No result of handling the request - 404
+		Response::create('404 Not Found', 404)->send();
+		exit(1);
 	}
 
 	/**
@@ -392,10 +346,10 @@ class Director implements TemplateGlobalProvider {
 	 * @param DataModel $model
 	 * @return HTTPResponse|string
 	 */
-	protected static function handleRequest(HTTPRequest $request, Session $session, DataModel $model) {
+	protected static function handleRequest(Request $request, Session $session, DataModel $model) {
 		$rules = Director::config()->get('rules');
 
-		if (isset($_REQUEST['debug'])) {
+		if ($request->get('debug') !== null) {
 			Debug::show($rules);
 		}
 
@@ -409,6 +363,7 @@ class Director implements TemplateGlobalProvider {
 			}
 
 			if (($arguments = $request->match($pattern, true)) !== false) {
+				Debug::show($controllerOptions);die;
 				$request->setRouteParams($controllerOptions);
 				// controllerOptions provide some default arguments
 				$arguments = array_merge($controllerOptions, $arguments);

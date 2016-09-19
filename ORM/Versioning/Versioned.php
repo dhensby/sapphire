@@ -24,6 +24,7 @@ use SilverStripe\Security\Permission;
 use SilverStripe\View\TemplateGlobalProvider;
 use InvalidArgumentException;
 use LogicException;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The Versioned extension allows your DataObjects to have several versions,
@@ -1918,13 +1919,13 @@ class Versioned extends DataExtension implements TemplateGlobalProvider {
 	/**
 	 * Determine if the current user is able to set the given site stage / archive
 	 *
-	 * @param HTTPRequest $request
+	 * @param Request $request
 	 * @return bool
 	 */
 	public static function can_choose_site_stage($request) {
 		// Request is allowed if stage isn't being modified
-		if((!$request->getVar('stage') || $request->getVar('stage') === static::LIVE)
-			&& !$request->getVar('archiveDate')
+		if((!$request->query->get('stage') || $request->query->get('stage') === static::LIVE)
+			&& !$request->query->get('archiveDate')
 		) {
 			return true;
 		}

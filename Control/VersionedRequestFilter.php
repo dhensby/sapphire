@@ -7,13 +7,15 @@ use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataModel;
 use SilverStripe\ORM\Versioning\Versioned;
 use SilverStripe\Security\Security;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Initialises the versioned stage when a request is made.
  */
 class VersionedRequestFilter implements RequestFilter {
 
-	public function preRequest(HTTPRequest $request, Session $session, DataModel $model) {
+	public function preRequest(Request $request, Session $session, DataModel $model) {
 		// Bootstrap session so that Session::get() accesses the right instance
 		$dummyController = new Controller();
 		$dummyController->setSession($session);
@@ -28,7 +30,7 @@ class VersionedRequestFilter implements RequestFilter {
 					'You must log in with your CMS password in order to view the draft or archived content. '.
 					'<a href="%s">Click here to go back to the published site.</a>'
 				),
-				Convert::raw2xml(Controller::join_links(Director::baseURL(), $request->getURL(), "?stage=Live"))
+				Convert::raw2xml(Controller::join_links(Director::baseURL(), $request->getRequestUri(), "?stage=Live"))
 			);
 
 			// Force output since RequestFilter::preRequest doesn't support response overriding
@@ -39,8 +41,8 @@ class VersionedRequestFilter implements RequestFilter {
 			if(class_exists('SilverStripe\\Dev\\SapphireTest', false) && SapphireTest::is_running_test()) {
 				throw new HTTPResponse_Exception($response);
 			}
-			$response->output();
-			die;
+			$response->send();
+			exit(1);
 		}
 
 		Versioned::choose_site_stage();
@@ -48,7 +50,7 @@ class VersionedRequestFilter implements RequestFilter {
 		return true;
 	}
 
-	public function postRequest(HTTPRequest $request, HTTPResponse $response, DataModel $model) {
+	public function postRequest(Request $request, Response $response, DataModel $model) {
 		return true;
 	}
 
