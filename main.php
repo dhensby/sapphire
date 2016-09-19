@@ -8,9 +8,8 @@ use SilverStripe\Core\Startup\ParameterConfirmationToken;
 use SilverStripe\Core\Startup\ErrorControlChain;
 use SilverStripe\Control\Session;
 use SilverStripe\Control\Director;
-
-
-
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /************************************************************************************
  ************************************************************************************
@@ -72,63 +71,7 @@ if(!class_exists('Composer\\Autoload\\ClassLoader', false)) {
 	}
 }
 
-// IIS will sometimes generate this.
-if(!empty($_SERVER['HTTP_X_ORIGINAL_URL'])) {
-	$_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_ORIGINAL_URL'];
-}
-
-/**
- * Figure out the request URL
- */
-global $url;
-
-// Helper to safely parse and load a querystring fragment
-$parseQuery = function($query) {
-	parse_str($query, $_GET);
-	if ($_GET) $_REQUEST = array_merge((array)$_REQUEST, (array)$_GET);
-};
-
-// Apache rewrite rules and IIS use this
-if (isset($_GET['url']) && php_sapi_name() !== 'cli-server') {
-
-	// Prevent injection of url= querystring argument by prioritising any leading url argument
-	if(isset($_SERVER['QUERY_STRING']) &&
-		preg_match('/^(?<url>url=[^&?]*)(?<query>.*[&?]url=.*)$/', $_SERVER['QUERY_STRING'], $results)
-	) {
-		$queryString = $results['query'].'&'.$results['url'];
-		$parseQuery($queryString);
-	}
-
-	$url = $_GET['url'];
-
-	// IIS includes get variables in url
-	$i = strpos($url, '?');
-	if($i !== false) {
-		$url = substr($url, 0, $i);
-	}
-
-	// Lighttpd and PHP 5.4's built-in webserver use this
-} else {
-	// Get raw URL -- still needs to be decoded below (after parsing out query string).
-	$url = $_SERVER['REQUEST_URI'];
-
-	// Querystring args need to be explicitly parsed
-	if(strpos($url,'?') !== false) {
-		list($url, $query) = explode('?',$url,2);
-		$parseQuery($query);
-	}
-
-	// Decode URL now that it has been separated from query string.
-	$url = urldecode($url);
-
-	// Pass back to the webserver for files that exist
-	if(php_sapi_name() === 'cli-server' && file_exists(BASE_PATH . $url) && is_file(BASE_PATH . $url)) {
-		return false;
-	}
-}
-
-// Remove base folders from the URL if webroot is hosted in a subfolder
-if (substr(strtolower($url), 0, strlen(BASE_URL)) == strtolower(BASE_URL)) $url = substr($url, strlen(BASE_URL));
+$request = Request::createFromGlobals();
 
 /**
  * Include SilverStripe's core code
@@ -140,7 +83,7 @@ require_once('Core/Startup/ParameterConfirmationToken.php');
 $reloadToken = ParameterConfirmationToken::prepare_tokens(array('isTest', 'isDev', 'flush'));
 $chain = new ErrorControlChain();
 $chain
-	->then(function($chain) use ($reloadToken) {
+	->then(function($chain) use ($reloadToken, $request) {
 		// If no redirection is necessary then we can disable error supression
 		if (!$reloadToken) $chain->setSuppression(false);
 
@@ -166,8 +109,10 @@ $chain
 
 		// Fail and redirect the user to the login page
 		$loginPage = Director::absoluteURL(Security::config()->login_url);
-		$loginPage .= "?BackURL=" . urlencode($_SERVER['REQUEST_URI']);
-		header('location: '.$loginPage, true, 302);
+		$loginPage .= "?BackURL=" . urlencode($request->getUri());
+		Response::create('', 302, array(
+			'Location' => $loginPage,
+		))->sendHeaders();
 		die;
 	})
 	// Finally if a token was requested but there was an error while figuring out if it's allowed, do it anyway
@@ -183,20 +128,15 @@ global $databaseConfig;
 // Redirect to the installer if no database is selected
 if(!isset($databaseConfig) || !isset($databaseConfig['database']) || !$databaseConfig['database']) {
 	if(!file_exists(BASE_PATH . '/install.php')) {
-		header($_SERVER['SERVER_PROTOCOL'] . " 500 Server Error");
-		die('SilverStripe Framework requires a $databaseConfig defined.');
+		Response::create('SilverStripe Framework requires a $databaseConfig defined.', 500)->send();
+		exit(1);
 	}
-	$s = (isset($_SERVER['SSL']) || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')) ? 's' : '';
-	$installURL = "http$s://" . $_SERVER['HTTP_HOST'] . BASE_URL . '/install.php';
-
-	// The above dirname() will equate to "\" on Windows when installing directly from http://localhost (not using
-	// a sub-directory), this really messes things up in some browsers. Let's get rid of the backslashes
-	$installURL = str_replace('\\', '', $installURL);
-
-	header("Location: $installURL");
-	die();
+	Response::create('', 302, array(
+		'Location' => $request->getUriForPath('install.php'),
+	))->send();
+	exit(1);
 }
 
 // Direct away - this is the "main" function, that hands control to the appropriate controller
 DataModel::set_inst(new DataModel());
-Director::direct($url, DataModel::inst());
+Director::direct($request->getPathInfo(), DataModel::inst());

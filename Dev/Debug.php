@@ -66,11 +66,13 @@ class Debug {
 	 */
 	public static function caller() {
 		$bt = debug_backtrace();
-		$caller = $bt[2];
+		// If there's no $bt[2] then it's from global scope
+		$caller = isset($bt[2]) ? $bt[2] : array();
 		$caller['line'] = $bt[1]['line'];
 		$caller['file'] = $bt[1]['file'];
 		if(!isset($caller['class'])) $caller['class'] = '';
 		if(!isset($caller['type'])) $caller['type'] = '';
+		if(!isset($caller['function'])) $caller['function'] = '';
 		return $caller;
 	}
 
