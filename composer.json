@@ -17,6 +17,7 @@
   ],
   "require": {
     "composer/installers": "~1.0",
+    "doctrine/dbal": "^2.5",
     "embed/embed": "^3.0",
     "league/flysystem": "~1.0.12",
     "monolog/monolog": "~1.11",
