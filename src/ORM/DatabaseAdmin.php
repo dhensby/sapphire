@@ -4,6 +4,7 @@ namespace SilverStripe\ORM;
 
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\ConnectionException;
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
 use League\Flysystem\Exception;
 use SilverStripe\Control\Director;
@@ -205,6 +206,7 @@ class DatabaseAdmin extends Controller
      */
     public function doBuild($quiet = false, $populate = true, $testMode = false)
     {
+        $quiet = false; // @todo - remove when finished debugging
         $createDB = false;
         $conn = DB::get_conn();
 
@@ -221,7 +223,7 @@ class DatabaseAdmin extends Controller
         }
 
         if ($createDB) {
-            if (true || !$quiet) {
+            if (!$quiet) {
                 echo '<p><b>Creating database</b></p>';
             }
 
@@ -263,7 +265,7 @@ class DatabaseAdmin extends Controller
         }
 
         // Build the database.  Most of the hard work is handled by DataObject
-        $dataClasses = ClassInfo::subclassesFor('SilverStripe\ORM\DataObject');
+        $dataClasses = ClassInfo::subclassesFor(DataObject::class);
         array_shift($dataClasses);
 
         if (!$quiet) {
@@ -275,37 +277,39 @@ class DatabaseAdmin extends Controller
         }
 
         // Initiate schema update
-        $dbSchema = DB::get_conn()->getSchemaManager();
-        $dbSchema->schemaUpdate(function () use ($dataClasses, $testMode, $quiet) {
+        $currentSchema = $conn->getSchemaManager()->createSchema();
+        $newSchema = new Schema() ;
             /** @var SilverStripe\ORM\DataObjectSchema $dataObjectSchema */
-            $dataObjectSchema = DataObject::getSchema();
-
-            foreach ($dataClasses as $dataClass) {
+            $dataObjectSchema = DataObject::getSchema();foreach ($dataClasses as $dataClass) {
                 // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
                 if (!class_exists($dataClass)) {
                     continue;
                 }
 
-                // Check if this class should be excluded as per testing conventions
-                $SNG = singleton($dataClass);
-                if (!$testMode && $SNG instanceof TestOnly) {
-                    continue;
-                }
+            // Check if this class should be excluded as per testing conventions
+            $SNG = singleton($dataClass);
+            if (!$testMode && $SNG instanceof TestOnly) {
+                continue;
+            }
                 $tableName = $dataObjectSchema->tableName($dataClass);
 
-                // Log data
-                if (!$quiet) {
-                    if (Director::is_cli()) {
-                        echo " * $tableName\n";
-                    } else {
-                        echo "<li>$tableName</li>\n";
-                    }
+            // Log data
+            if (!$quiet) {
+                if (Director::is_cli()) {
+                    echo " * $tableName\n";
+                } else {
+                    echo "<li>$tableName</li>\n";
                 }
-
-                // Instruct the class to apply its schema to the database
-                $SNG->requireTable();
             }
-        });
+
+            // Instruct the class to apply its schema to the database
+            $SNG->augmentDBSchema($newSchema);
+        }
+        $migrateSQL = $currentSchema->getMigrateToSql($newSchema, $conn->getDatabasePlatform());
+        foreach ($migrateSQL as $qry) {
+            $conn->executeQuery($qry);
+        }
+        var_export($migrateSQL); die;
         ClassInfo::reset_db_cache();
 
         if ($populate) {

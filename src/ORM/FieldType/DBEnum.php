@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\ORM\ArrayLib;
@@ -74,32 +75,6 @@ class DBEnum extends DBString
         }
 
         parent::__construct($name);
-    }
-
-    /**
-     * @return void
-     */
-    public function requireField()
-    {
-        $charset = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'charset');
-        $collation = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'collation');
-
-        $parts = array(
-            'datatype' => 'enum',
-            'enums' => $this->getEnum(),
-            'character set' => $charset,
-            'collate' => $collation,
-            'default' => $this->getDefault(),
-            'table' => $this->getTable(),
-            'arrayValue' => $this->arrayValue
-        );
-
-        $values = array(
-            'type' => 'enum',
-            'parts' => $parts
-        );
-
-        DB::require_field($this->getTable(), $this->getName(), $values);
     }
 
     /**

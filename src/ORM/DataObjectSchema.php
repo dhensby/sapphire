@@ -498,16 +498,6 @@ class DataObjectSchema
         }
         $indexes = [];
 
-        // look for indexable field types
-        foreach ($this->databaseFields($class, false) as $field => $type) {
-            if ($type === 'ForeignKey' || $type === 'DBClassName') {
-                $indexes[$field] = [
-                    'type' => 'index',
-                    'columns' => [$field],
-                ];
-            }
-        }
-
         // look for custom indexes declared on the class
         $classIndexes = Config::inst()->get($class, 'indexes', Config::UNINHERITED) ?: [];
         foreach ($classIndexes as $indexName => $indexSpec) {

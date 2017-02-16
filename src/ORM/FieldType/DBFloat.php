@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\ORM\DB;
 
@@ -18,16 +19,16 @@ class DBFloat extends DBField
         parent::__construct($name);
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = array(
-            'datatype'=>'float',
-            'null'=>'not null',
-            'default'=>$this->defaultVal,
-            'arrayValue'=>$this->arrayValue
-        );
-        $values = array('type'=>'float', 'parts'=>$parts);
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::FLOAT;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'notnull' => true,
+        ];
     }
 
     /**

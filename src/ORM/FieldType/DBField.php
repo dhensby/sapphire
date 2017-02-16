@@ -502,9 +502,33 @@ abstract class DBField extends ViewableData
     }
 
     /**
-     * Add the field to the underlying database.
+     * @return string A DB Type as defined in \Doctrine\DBAL\Types\Type constants
      */
-    abstract public function requireField();
+    abstract public function getDBType();
+
+    /**
+     * @return array
+     */
+    public function getDBOptions()
+    {
+        return [
+            'default' => $this->getDefaultValue(),
+        ];
+    }
+
+    /**
+     * Add the field to the underlying database.
+     *
+     * @param \Doctrine\DBAL\Schema\Table $table
+     * @return $this
+     *
+     * @todo Stop this being abstract? We can set up a getDBType and default getDBOptions and have this be unified
+     */
+    public function augmentDBTable($table) {
+        $table->addColumn($this->getName(), $this->getDBType(), $this->getDBOptions());
+
+        return $this;
+    }
 
     public function debug()
     {

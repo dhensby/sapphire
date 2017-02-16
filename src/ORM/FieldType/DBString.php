@@ -2,11 +2,15 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
+
 /**
  * An abstract base class for the string field types (i.e. Varchar and Text)
  */
 abstract class DBString extends DBField
 {
+
+    protected $size;
 
     /**
      * @var boolean
@@ -28,11 +32,12 @@ abstract class DBString extends DBField
     /**
      * Construct a string type field with a set of optional parameters.
      *
-     * @param string $name string The name of the field
-     * @param array $options array An array of options e.g. array('nullifyEmpty'=>false).  See
-     *                       {@link StringField::setOptions()} for information on the available options
+     * @param string $name The name of the field
+     * @param int $size The maximum size of the field, in terms of characters
+     * @param array $options Optional parameters, e.g. array("nullifyEmpty"=>false).
+     *                       See {@link StringField::setOptions()} for information on the available options
      */
-    public function __construct($name = null, $options = array())
+    public function __construct($name = null, $size = null, $options = array())
     {
         if ($options) {
             if (!is_array($options)) {
@@ -41,7 +46,46 @@ abstract class DBString extends DBField
             $this->setOptions($options);
         }
 
+        if ($size) {
+            $this->setSize($size);
+        }
+
         parent::__construct($name);
+    }
+
+    /**
+     * Allow the ability to access the size of the field programatically. This
+     * can be useful if you want to have text fields with a length limit that
+     * is dictated by the DB field.
+     *
+     * TextField::create('Title')->setMaxLength(singleton('SiteTree')->dbObject('Title')->getSize())
+     *
+     * @return int The size of the field
+     */
+    public function getSize()
+    {
+        return $this->size ?: 255;
+    }
+
+    public function setSize($size)
+    {
+        if (is_numeric($size) && $size > 0) {
+            $this->size = (int)$size;
+        }
+
+        return $this;
+    }
+
+    public function getDBType()
+    {
+        return Type::STRING;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'precision' => $this->getSize(),
+        ];
     }
 
     /**
@@ -63,6 +107,9 @@ abstract class DBString extends DBField
         }
         if (array_key_exists("default", $options)) {
             $this->setDefaultValue($options["default"]);
+        }
+        if (array_key_exists("size", $options)) {
+            $this->setSize($options["size"]);
         }
         return $this;
     }

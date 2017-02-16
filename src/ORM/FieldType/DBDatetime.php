@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use IntlDateFormatter;
 use SilverStripe\Forms\DatetimeField;
 use SilverStripe\i18n\i18n;
@@ -113,17 +114,10 @@ class DBDatetime extends DBDate implements TemplateGlobalProvider
         return $this->Format($dateFormat . ' ' . $timeFormat);
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = [
-            'datatype' => 'datetime',
-            'arrayValue' => $this->arrayValue
-        ];
-        $values = [
-            'type' => 'datetime',
-            'parts' => $parts
-        ];
-        DB::require_field($this->tableName, $this->name, $values);
+        // @todo - should this be TYPE::DATETIMETZ ?
+        return Type::DATETIME;
     }
 
     /**

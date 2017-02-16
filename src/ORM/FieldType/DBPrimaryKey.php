@@ -2,6 +2,8 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Schema\Column;
+use SilverStripe\Dev\Backtrace;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
 
@@ -35,10 +37,23 @@ class DBPrimaryKey extends DBInt
         return $this->autoIncrement;
     }
 
-    public function requireField()
+    public function getDBOptions()
     {
-        $spec = DB::get_schema()->IdColumn(false, $this->getAutoIncrement());
-        DB::require_field($this->getTable(), $this->getName(), $spec);
+        $options = parent::getDBOptions() + [
+            'autoincrement' => $this->getAutoIncrement(),
+            'notnull' => true,
+        ];
+        unset($options['default']);
+        return $options;
+    }
+
+    public function augmentDBTable($table)
+    {
+        parent::augmentDBTable($table);
+
+        $table->setPrimaryKey([
+            $this->getName(),
+        ]);
     }
 
     /**

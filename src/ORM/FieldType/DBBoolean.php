@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\ORM\DB;
@@ -19,18 +20,18 @@ class DBBoolean extends DBField
         parent::__construct($name);
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts=array(
-            'datatype'=>'tinyint',
-            'precision'=>1,
-            'sign'=>'unsigned',
-            'null'=>'not null',
-            'default'=>$this->defaultVal,
-            'arrayValue'=>$this->arrayValue
-        );
-        $values=array('type'=>'boolean', 'parts'=>$parts);
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::BOOLEAN;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'precision' => 1,
+            'unsigned' => true,
+            'notnull' => true,
+        ];
     }
 
     public function Nice()

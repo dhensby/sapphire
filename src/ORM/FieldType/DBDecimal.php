@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\ORM\DB;
 use SilverStripe\Forms\NumericField;
 
@@ -48,21 +49,9 @@ class DBDecimal extends DBField
         return floor($this->value);
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = array(
-            'datatype' => 'decimal',
-            'precision' => "$this->wholeSize,$this->decimalSize",
-            'default' => $this->defaultValue,
-            'arrayValue' => $this->arrayValue
-        );
-
-        $values = array(
-            'type' => 'decimal',
-            'parts' => $parts
-        );
-
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::DECIMAL;
     }
 
     public function saveInto($dataObject)

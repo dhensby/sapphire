@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use IntlDateFormatter;
 use InvalidArgumentException;
 use NumberFormatter;
@@ -466,11 +467,9 @@ class DBDate extends DBField
         }
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts=array('datatype'=>'date', 'arrayValue'=>$this->arrayValue);
-        $values=array('type'=>'date', 'parts'=>$parts);
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::DATE;
     }
 
     /**

@@ -191,9 +191,10 @@ class Convert
             return $val;
         } else {
             if ($quoted) {
-                return DB::get_conn()->quoteString($val);
+                return DB::get_conn()->quote($val);
             } else {
-                return DB::get_conn()->escapeString($val);
+                // @todo what's the difference here?
+                return DB::get_conn()->quote($val);
             }
         }
     }

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\ORM\DB;
 
 /**
@@ -15,17 +16,16 @@ use SilverStripe\ORM\DB;
 class DBBigInt extends DBInt
 {
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = array(
-            'datatype' => 'bigint',
-            'precision' => 8,
-            'null' => 'not null',
-            'default' => $this->defaultVal,
-            'arrayValue' => $this->arrayValue
-        );
+        return Type::BIGINT;
+    }
 
-        $values = array('type' => 'bigint', 'parts' => $parts);
-        DB::require_field($this->tableName, $this->name, $values);
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+                'precision' => 8,
+                'notnull' => true,
+        ];
     }
 }
