@@ -2,6 +2,10 @@
 
 namespace SilverStripe\ORM;
 
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\ConnectionException;
+use Doctrine\DBAL\VersionAwarePlatformDriver;
+use League\Flysystem\Exception;
 use BadMethodCallException;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
@@ -217,25 +221,23 @@ class DatabaseAdmin extends Controller
      */
     public function doBuild($quiet = false, $populate = true, $testMode = false)
     {
-        if ($quiet) {
-            DB::quiet();
-        } else {
-            $conn = DB::get_conn();
-            // Assumes database class is like "MySQLDatabase" or "MSSQLDatabase" (suffixed with "Database")
-            $dbType = substr(get_class($conn), 0, -8);
-            $dbVersion = $conn->getVersion();
-            $databaseName = $conn->getSelectedDatabase();
+        $createDB = false;
+        $conn = DB::get_conn();
 
-            if (Director::is_cli()) {
-                echo sprintf("\n\nBuilding database %s using %s %s\n\n", $databaseName, $dbType, $dbVersion);
-            } else {
-                echo sprintf("<h2>Building database %s using %s %s</h2>", $databaseName, $dbType, $dbVersion);
-            }
+        // try to connect - if there's an error - it's likely to be because the DB doesn't exist
+        // in that case, attempt to create the DB
+        try {
+            $conn->connect();
+        } catch (ConnectionException $e) {
+            $createDB = true;
+            $params = $conn->getParams();
+            unset($params['dbname']);
+            $conn = DriverManager::getConnection($params, $conn->getConfiguration(), $conn->getEventManager());
+            DB::set_conn($conn);
         }
 
-        // Set up the initial database
-        if (!DB::is_active()) {
-            if (!$quiet) {
+        if ($createDB) {
+            if (true || !$quiet) {
                 echo '<p><b>Creating database</b></p>';
             }
 
@@ -247,17 +249,32 @@ class DatabaseAdmin extends Controller
             $parameters = (!empty($databaseConfig)) ? $databaseConfig : $_REQUEST['db'];
 
             // Check database name is given
-            if (empty($parameters['database'])) {
+            if (empty($parameters['dbname'])) {
                 throw new BadMethodCallException(
                     "No database name given; please give a value for SS_DATABASE_NAME or set SS_DATABASE_CHOOSE_NAME"
                 );
             }
-            $database = $parameters['database'];
+            $database = $parameters['dbname'];
 
-            // Establish connection and create database in two steps
-            unset($parameters['database']);
-            DB::connect($parameters);
-            DB::create_database($database);
+            // create the DB and use it.
+            try {
+                $conn->getSchemaManager()->createDatabase($database);
+            } catch (\Exception $e) {
+                die($e->getMessage());
+            }
+            $conn->executeQuery('USE ' . $conn->quoteIdentifier($database));
+        }
+
+        if (!$quiet) {
+            $dbType = $conn->getDriver()->getName();
+            $dbVersion = DB::get_server_version() ?: 'unknown server version';
+            $databaseName = $conn->getDatabase();
+
+            if (Director::is_cli()) {
+                echo sprintf("\n\nBuilding database %s using %s %s\n\n", $databaseName, $dbType, $dbVersion);
+            } else {
+                echo sprintf("<h2>Building database %s using %s %s</h2>", $databaseName, $dbType, $dbVersion);
+            }
         }
 
         // Build the database.  Most of the hard work is handled by DataObject
@@ -273,7 +290,7 @@ class DatabaseAdmin extends Controller
         }
 
         // Initiate schema update
-        $dbSchema = DB::get_schema();
+        $dbSchema = DB::get_conn()->getSchemaManager();
         $dbSchema->schemaUpdate(function () use ($dataClasses, $testMode, $quiet) {
             $dataObjectSchema = DataObject::getSchema();
 
