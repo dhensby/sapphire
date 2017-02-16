@@ -184,7 +184,7 @@ $chain
 global $databaseConfig;
 
 // Redirect to the installer if no database is selected
-if(!isset($databaseConfig) || !isset($databaseConfig['database']) || !$databaseConfig['database']) {
+if(!isset($databaseConfig) || !isset($databaseConfig['dbname']) || !$databaseConfig['dbname']) {
 
     // Is there an _ss_environment.php file?
     if(file_exists(BASE_PATH . '/_ss_environment.php') || file_exists(dirname(BASE_PATH) . '/_ss_environment.php')) {
@@ -204,7 +204,6 @@ if(!isset($databaseConfig) || !isset($databaseConfig['database']) || !$databaseC
 
         die();
     }
-
 	if(!file_exists(BASE_PATH . '/install.php')) {
 		header($_SERVER['SERVER_PROTOCOL'] . " 500 Server Error");
 		die('SilverStripe Framework requires a $databaseConfig defined.');

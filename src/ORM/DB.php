@@ -2,14 +2,15 @@
 
 namespace SilverStripe\ORM;
 
+use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\VersionAwarePlatformDriver;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Cookie;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\Connect\DBConnector;
-use SilverStripe\ORM\Connect\DBSchemaManager;
 use SilverStripe\ORM\Connect\Query;
 use SilverStripe\ORM\Queries\SQLExpression;
 use SilverStripe\ORM\Connect\Database;
@@ -24,25 +25,10 @@ class DB
 {
 
     /**
-     * This constant was added in SilverStripe 2.4 to indicate that SQL-queries
-     * should now use ANSI-compatible syntax.  The most notable affect of this
-     * change is that table and field names should be escaped with double quotes
-     * and not backticks
-     */
-    const USE_ANSI_SQL = true;
-
-
-    /**
      * The global database connection.
      * @var Database
      */
     private static $connections = array();
-
-    /**
-     * The last SQL query run.
-     * @var string
-     */
-    public static $lastQuery;
 
     /**
      * Internal flag to keep track of when db connection was attempted.
@@ -54,13 +40,13 @@ class DB
      * Pass an object that's a subclass of SS_Database.  This object will be used when {@link DB::query()}
      * is called.
      *
-     * @param Database $connection The connecton object to set as the connection.
+     * @param \Doctrine\DBAL\Connection $connection The connecton object to set as the connection.
      * @param string $name The name to give to this connection.  If you omit this argument, the connection
      * will be the default one used by the ORM.  However, you can store other named connections to
      * be accessed through DB::get_conn($name).  This is useful when you have an application that
      * needs to connect to more than one database.
      */
-    public static function set_conn(Database $connection, $name = 'default')
+    public static function set_conn($connection, $name = 'default')
     {
         self::$connections[$name] = $connection;
     }
@@ -70,7 +56,7 @@ class DB
      *
      * @param string $name An optional name given to a connection in the DB::setConn() call.  If omitted,
      * the default connection is returned.
-     * @return Database
+     * @return \Doctrine\DBAL\Connection
      */
     public static function get_conn($name = 'default')
     {
@@ -80,14 +66,30 @@ class DB
         return null;
     }
 
-    /**
-     * @deprecated since version 4.0 Use DB::get_conn instead
-     * @todo PSR-2 standardisation will probably un-deprecate this
-     */
-    public static function getConn($name = 'default')
+    public static function get_server_version($name = 'default')
     {
-        Deprecation::notice('4.0', 'Use DB::get_conn instead');
-        return self::get_conn($name);
+        $conn = self::get_conn($name);
+
+        // Driver does not support version specific platforms.
+        if ( ! $conn->getDriver() instanceof VersionAwarePlatformDriver) {
+            return null;
+        }
+
+        $params = $conn->getParams();
+        // Explicit platform version requested (supersedes auto-detection).
+        if (isset($params['serverVersion'])) {
+            return $params['serverVersion'];
+        }
+
+        // Automatic platform version detection.
+        if ($conn->getWrappedConnection() instanceof ServerInfoAwareConnection &&
+            ! $conn->getWrappedConnection()->requiresQueryForServerVersion()
+        ) {
+            return $conn->getWrappedConnection()->getServerVersion();
+        }
+
+        // Unable to detect platform version.
+        return null;
     }
 
     /**
@@ -95,7 +97,7 @@ class DB
      *
      * @param string $name An optional name given to a connection in the DB::setConn() call.  If omitted,
      * the default connection is returned.
-     * @return DBSchemaManager
+     * @return \Doctrine\DBAL\Schema\AbstractSchemaManager
      */
     public static function get_schema($name = 'default')
     {
@@ -124,22 +126,6 @@ class DB
             $parameters = array();
             return null;
         }
-    }
-
-    /**
-     * Retrieves the connector object for the current database
-     *
-     * @param string $name An optional name given to a connection in the DB::setConn() call.  If omitted,
-     * the default connection is returned.
-     * @return DBConnector
-     */
-    public static function get_connector($name = 'default')
-    {
-        $connection = self::get_conn($name);
-        if ($connection) {
-            return $connection->getConnector();
-        }
-        return null;
     }
 
     /**
@@ -253,44 +239,23 @@ class DB
      * subclass of {@link SS_Database}.
      *
      * @param array $databaseConfig A map of options. The 'type' is the name of the
-     * subclass of SS_Database to use. For the rest of the options, see the specific class.
+     * driver to use. For the rest of the options, see the specific class.
      * @param string $label identifier for the connection
-     * @return Database
+     * @return \Doctrine\DBAL\Connection
      */
     public static function connect($databaseConfig, $label = 'default')
     {
-
+        $databaseConfig['charset'] = 'UTF8';
         // This is used by the "testsession" module to test up a test session using an alternative name
         if ($name = self::get_alternative_database_name()) {
-            $databaseConfig['database'] = $name;
+            $databaseConfig['dbname'] = $name;
         }
 
-        if (!isset($databaseConfig['type']) || empty($databaseConfig['type'])) {
-            user_error("DB::connect: Not passed a valid database config", E_USER_ERROR);
-        }
-
-        self::$connection_attempted = true;
-
-        $dbClass = $databaseConfig['type'];
-
-        // Using Injector->create allows us to use registered configurations
-        // which may or may not map to explicit objects
-        $conn = Injector::inst()->create($dbClass);
-        $conn->connect($databaseConfig);
+        $conn = DriverManager::getConnection($databaseConfig);
 
         self::set_conn($conn, $label);
 
         return $conn;
-    }
-
-    /**
-     * Returns true if a database connection has been attempted.
-     * In particular, it lets the caller know if we're still so early in the execution pipeline that
-     * we haven't even tried to connect to the database yet.
-     */
-    public static function connection_attempted()
-    {
-        return self::$connection_attempted;
     }
 
     /**
@@ -464,7 +429,7 @@ class DB
      */
     public static function is_active()
     {
-        return ($conn = self::get_conn()) && $conn->isActive();
+        return ($conn = self::get_conn()) && $conn->isConnected();
     }
 
     /**

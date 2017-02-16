@@ -87,11 +87,11 @@ if ($dbUser = getenv('SS_DATABASE_USERNAME')) {
 
     /** @skipUpgrade */
     $databaseConfig = array(
-        "type" => getenv('SS_DATABASE_CLASS') ?: 'MySQLPDODatabase',
-        "server" => getenv('SS_DATABASE_SERVER') ?: 'localhost',
-        "username" => $dbUser,
+        "dbname" => $databaseNameWrapper($database),
+        "user" => $dbUser,
         "password" => getenv('SS_DATABASE_PASSWORD'),
-        "database" => $databaseNameWrapper($database),
+        "host" => getenv('SS_DATABASE_SERVER') ?: 'localhost',
+        "driver" => getenv('SS_DATABASE_CLASS') ?: 'pdo_mysql',
     );
 
     // Set the port if called for
