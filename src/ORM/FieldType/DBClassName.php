@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\ORM\DataObject;
@@ -61,27 +62,9 @@ class DBClassName extends DBEnum
         parent::__construct($name, null, null, $options);
     }
 
-    /**
-     * @return void
-     */
-    public function requireField()
+    public function getDBType()
     {
-        $parts = array(
-            'datatype' => 'enum',
-            'enums' => $this->getEnumObsolete(),
-            'character set' => 'utf8',
-            'collate' => 'utf8_general_ci',
-            'default' => $this->getDefault(),
-            'table' => $this->getTable(),
-            'arrayValue' => $this->arrayValue
-        );
-
-        $values = array(
-            'type' => 'enum',
-            'parts' => $parts
-        );
-
-        DB::require_field($this->getTable(), $this->getName(), $values);
+        return Type::STRING;
     }
 
     /**

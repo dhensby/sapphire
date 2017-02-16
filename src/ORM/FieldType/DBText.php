@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
@@ -37,29 +38,15 @@ class DBText extends DBString
         "Summary" => "Text",
     );
 
-    /**
-     * (non-PHPdoc)
-     * @see DBField::requireField()
-     */
-    public function requireField()
+    public function getSize()
     {
-        $charset = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'charset');
-        $collation = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'collation');
+        // 16777215 will force "mediumtext" in mysql driver
+        return $this->size ?: 16777215;
+    }
 
-        $parts = [
-            'datatype' => 'mediumtext',
-            'character set' => $charset,
-            'collate' => $collation,
-            'default' => $this->defaultVal,
-            'arrayValue' => $this->arrayValue
-        ];
-
-        $values = [
-            'type' => 'text',
-            'parts' => $parts
-        ];
-
-        DB::require_field($this->tableName, $this->name, $values);
+    public function getDBType()
+    {
+        return Type::TEXT;
     }
 
     /**

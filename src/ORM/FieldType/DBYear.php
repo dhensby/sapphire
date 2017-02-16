@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\ORM\DB;
 
@@ -11,11 +12,16 @@ use SilverStripe\ORM\DB;
 class DBYear extends DBField
 {
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts=array('datatype'=>'year', 'precision'=>4, 'arrayValue'=>$this->arrayValue);
-        $values=array('type'=>'year', 'parts'=>$parts);
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::INTEGER;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'precision' => 4,
+        ];
     }
 
     public function scaffoldFormField($title = null, $params = null)

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\ArrayList;
@@ -28,17 +29,17 @@ class DBInt extends DBField
         return number_format($this->value);
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = [
-            'datatype' => 'int',
+        return Type::INTEGER;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
             'precision' => 11,
-            'null' => 'not null',
-            'default' => $this->defaultVal,
-            'arrayValue' => $this->arrayValue
+            'notnull' => true,
         ];
-        $values = ['type' => 'int', 'parts' => $parts];
-        DB::require_field($this->tableName, $this->name, $values);
     }
 
     public function Times()

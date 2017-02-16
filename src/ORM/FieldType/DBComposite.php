@@ -44,6 +44,11 @@ abstract class DBComposite extends DBField
      */
     protected $record = array();
 
+    public function getDBType()
+    {
+        // noop
+    }
+
     /**
      * Write all nested fields into a manipulation
      *
@@ -127,11 +132,13 @@ abstract class DBComposite extends DBField
         return true;
     }
 
-    public function requireField()
+    public function augmentDBTable($table)
     {
-        foreach ($this->compositeDatabaseFields() as $field => $spec) {
-            $key = $this->getName() . $field;
-            DB::require_field($this->tableName, $key, $spec);
+        foreach ($this->compositeDatabaseFields() as $fieldName => $fieldType) {
+            /** @var DBField $field */
+            $fieldSpec = Object::parse_class_spec($fieldType);
+            $field = DBField::create_field($fieldSpec[0], null, $this->getName() . $fieldName);
+            $field->augmentDBTable($table);
         }
     }
 

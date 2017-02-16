@@ -575,6 +575,8 @@ class DataObjectSchema
     protected function buildCustomDatabaseIndexes($class)
     {
         $indexes = [];
+
+        // look for custom indexes declared on the class
         $classIndexes = Config::inst()->get($class, 'indexes', Config::UNINHERITED) ?: [];
         foreach ($classIndexes as $indexName => $indexSpec) {
             if (array_key_exists($indexName, $indexes)) {

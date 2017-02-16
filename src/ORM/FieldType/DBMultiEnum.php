@@ -31,27 +31,6 @@ class DBMultiEnum extends DBEnum
         }
     }
 
-    public function requireField()
-    {
-        // @todo: Remove mysql-centric logic from this
-        $charset = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'charset');
-        $collation = Config::inst()->get('SilverStripe\ORM\Connect\MySQLDatabase', 'collation');
-        $values=array(
-            'type'=>'set',
-            'parts'=>array(
-                'enums'=>$this->enum,
-                'character set'=> $charset,
-                'collate'=> $collation,
-                'default'=> $this->default,
-                'table'=>$this->tableName,
-                'arrayValue'=>$this->arrayValue
-            )
-        );
-
-        DB::require_field($this->tableName, $this->name, $values);
-    }
-
-
     /**
      * Return a {@link CheckboxSetField} suitable for editing this field
      *

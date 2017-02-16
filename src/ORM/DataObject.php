@@ -3277,9 +3277,11 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
     /**
      * Check the database schema and update it as necessary.
      *
+     * @param \Doctrine\DBAL\Schema\Schema $dbSchema
+     *
      * @uses DataExtension->augmentDatabase()
      */
-    public function requireTable()
+    public function augmentDBSchema($dbSchema)
     {
         // Only build the table if we've actually got fields
         $schema = static::getSchema();
@@ -3316,17 +3318,13 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         if ($fields) {
-            $hasAutoIncPK = get_parent_class($this) === self::class;
-            DB::require_table(
-                $table,
-                $fields,
-                $indexes,
-                $hasAutoIncPK,
-                $this->config()->get('create_table_options'),
-                $extensions
-            );
-        } else {
-            DB::dont_require_table($table);
+            $dbTable = $dbSchema->createTable($table);
+            foreach ($fields as $fieldName => $fieldType) {
+                /** @var DBField $field */
+                $fieldSpec = Object::parse_class_spec($fieldType);
+                $field = DBField::create_field($fieldSpec[0], null, $fieldName);
+                $field->augmentDBTable($dbTable);
+            }
         }
 
         // Build any child tables for many_many items
@@ -3366,12 +3364,14 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                         'columns' => [$childField],
                     ],
                 ];
-                DB::require_table($tableOrClass, $manymanyFields, $manymanyIndexes, true, null, $extensions);
+                // @todo fix tihs up
+//                DB::require_table($tableOrClass, $manymanyFields, $manymanyIndexes, true, null, $extensions);
             }
         }
 
         // Let any extentions make their own database fields
-        $this->extend('augmentDatabase', $dummy);
+        // @todo get versioned working
+//        $this->extend('augmentDatabase', $dbSchema);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use Doctrine\DBAL\Types\Type;
 use IntlDateFormatter;
 use InvalidArgumentException;
 use SilverStripe\Forms\TimeField;
@@ -127,17 +128,9 @@ class DBTime extends DBField
         return $formatter->format($this->getTimestamp());
     }
 
-    public function requireField()
+    public function getDBType()
     {
-        $parts = [
-            'datatype' => 'time',
-            'arrayValue' => $this->arrayValue
-        ];
-        $values = [
-            'type' => 'time',
-            'parts' => $parts
-        ];
-        DB::require_field($this->tableName, $this->name, $values);
+        return Type::TIME;
     }
 
     public function scaffoldFormField($title = null, $params = null)
