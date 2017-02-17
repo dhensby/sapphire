@@ -1136,13 +1136,15 @@ class Security extends Controller implements TemplateGlobalProvider
             singleton($class);
 
             // if any of the tables don't have all fields mapped as table columns
-            $dbFields = DB::field_list($table);
+            $dbFields = DB::get_conn()->getSchemaManager()->listTableColumns($table);
+            $dbFields = array_map(function($column) {
+                return $column->getName();
+            }, $dbFields);
             if (!$dbFields) {
                 return false;
             }
-
             $objFields = $schema->databaseFields($class, false);
-            $missingFields = array_diff_key($objFields, $dbFields);
+            $missingFields = array_diff(array_keys($objFields), $dbFields);
 
             if ($missingFields) {
                 return false;
