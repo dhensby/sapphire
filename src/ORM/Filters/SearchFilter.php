@@ -7,6 +7,7 @@ use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataQuery;
 use InvalidArgumentException;
+use SilverStripe\ORM\DB;
 use SilverStripe\ORM\FieldType\DBField;
 
 /**
@@ -288,11 +289,10 @@ abstract class SearchFilter
                 ));
             }
             return sprintf(
-                '%s("%s%s".%s)',
+                '%s(%s.%s)',
                 $function,
-                $tablePrefix,
-                $table,
-                $column ? "\"$column\"" : '"ID"'
+                DB::get_conn()->quoteIdentifier($tablePrefix.$table),
+                DB::get_conn($column ?: 'ID')
             );
         }
 
@@ -302,11 +302,14 @@ abstract class SearchFilter
         if ($table) {
             return $schema->sqlColumnForField($this->model, $this->name, $tablePrefix);
         }
-
         // fallback to the provided name in the event of a joined column
         // name (as the candidate class doesn't check joined records)
+        return $this->fullName;
         $parts = explode('.', $this->fullName);
-        return '"' . implode('"."', $parts) . '"';
+        $parts = array_map(function($part) {
+            return DB::get_conn()->quoteIdentifier($part);
+        }, $parts);
+        return  implode('', $parts) ;
     }
 
     /**

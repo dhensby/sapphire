@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Queries;
 
 use SilverStripe\Dev\Deprecation;
+use SilverStripe\ORM\DB;
 
 /**
  * Represents a SQL query for an expression which interacts with existing rows
@@ -297,9 +298,9 @@ abstract class SQLConditionalExpression extends SQLExpression
             // Ensure tables are quoted, unless the table is actually a sub-select
             $table = preg_match('/\bSELECT\b/i', $join['table'])
                 ? $join['table']
-                : "\"{$join['table']}\"";
+                : DB::get_conn()->quoteIdentifier($join['table']);
             $aliasClause = ($alias != $join['table'])
-                ? " AS \"{$alias}\""
+                ? sprintf(' AS %s', DB::get_conn()->quoteIdentifier($alias))
                 : "";
             $joins[$alias] = strtoupper($join['type']) . " JOIN " . $table . "$aliasClause ON $filter";
             if (!empty($join['parameters'])) {

@@ -1268,9 +1268,9 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Perform an insert on the base table
-        $insert = new SQLInsert('"'.$baseTable.'"');
+        $insert = new SQLInsert($baseTable);
         $insert
-            ->assign('"Created"', $now)
+            ->assign('Created', $now)
             ->execute();
         $this->changed['ID'] = self::CHANGE_VALUE;
         $this->record['ID'] = DB::get_generated_id($baseTable);
@@ -1292,7 +1292,8 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Allow extensions to extend this manipulation
-        $this->extend('augmentWrite', $manipulation);
+        // @todo get versioned working
+        //$this->extend('augmentWrite', $manipulation);
 
         // New records have their insert into the base data table done first, so that they can pass the
         // generated ID on to the rest of the manipulation
@@ -1300,8 +1301,59 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             $manipulation[$baseTable]['command'] = 'update';
         }
 
-        // Perform the manipulation
-        DB::manipulate($manipulation);
+        DB::get_conn()->transactional(function ($conn) use ($manipulation) {
+            /**
+             * @var \Doctrine\DBAL\Connection $conn */
+            foreach ($manipulation as $table => $writeInfo) {
+                $qryBuilder = $conn->createQueryBuilder();
+                switch ($writeInfo['command']) {
+                    case 'update':
+                        // Build update
+                        $qryBuilder->update($table);
+                        $selectQB = $conn->createQueryBuilder();
+                        $selectQB->select('COUNT(*)')->from($table);
+
+                        foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
+                            $qryBuilder->set($fieldName, '?');
+                            $qryBuilder->createPositionalParameter($fieldValue);
+                        }
+
+                        // Set best condition to use
+                        if (!empty($writeInfo['where'])) {
+                            // @todo this
+                            throw new Exception('need to integrate this');
+                        } elseif (!empty($writeInfo['id'])) {
+                            $qryBuilder->where('ID = ?');
+                            $qryBuilder->createPositionalParameter($writeInfo['id']);
+                            $selectQB->where('ID = ?');
+                            $selectQB->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT);
+                        }
+
+                        // Test to see if this update query shouldn't, in fact, be an insert
+                        if ($selectQB->execute()->fetchColumn()) {
+                            // @todo will this work in a transaction?
+                            $qryBuilder->execute();
+                            break;
+                        }
+                        // ...if not, we'll skip on to the insert code
+                    case 'insert':
+                        // Ensure that the ID clause is given if possible
+                        if (!isset($writeInfo['fields']['ID']) && isset($writeInfo['id'])) {
+                            $writeInfo['fields']['ID'] = $writeInfo['id'];
+                        }
+
+                        $qryBuilder->insert($table);
+
+                        foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
+                            $qryBuilder->set($fieldName, '?');
+                            $qryBuilder->createPositionalParameter($fieldValue);
+                        }
+
+                        $qryBuilder->execute();
+                        break;
+                }
+            }
+        });
     }
 
     /**
@@ -2233,7 +2285,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             $this->extend('augmentSQL', $query, $dataQuery);
 
             $dataQuery->setQueriedColumns($columns);
-            $newData = $dataQuery->execute()->record();
+            $newData = $dataQuery->execute()->fetch(\PDO::FETCH_ASSOC);
 
             // Load the data into record
             if ($newData) {

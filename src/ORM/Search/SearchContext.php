@@ -9,6 +9,7 @@ use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\FormField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Filters\SearchFilter;
 use InvalidArgumentException;
 use Exception;
@@ -108,12 +109,22 @@ class SearchContext
     {
         $classes = ClassInfo::dataClassesFor($this->modelClass);
         $baseTable = DataObject::getSchema()->baseDataTable($this->modelClass);
-        $fields = array("\"{$baseTable}\".*");
+        $fields = array(sprintf(
+            '%s.*',
+            DB::get_conn()->quoteIdentifier($baseTable)
+        ));
         if ($this->modelClass != $classes[0]) {
-            $fields[] = '"'.$classes[0].'".*';
+            $fields[] = sprintf(
+                '%s.*',
+                DB::get_conn()->quoteIdentifier($baseTable)
+            );
         }
         //$fields = array_keys($model->db());
-        $fields[] = '"'.$classes[0].'".\"ClassName\" AS "RecordClassName"';
+        $fields[] = sprintf('%s.%s AS %s',
+            DB::get_conn()->quoteIdentifier($classes[0]),
+            DB::get_conn()->quoteIdentifier('ClassName'),
+            DB::get_conn()->quoteIdentifier('RecordClassName')
+        );
         return $fields;
     }
 

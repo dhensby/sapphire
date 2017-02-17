@@ -59,8 +59,20 @@ class DataQuery_SubGroup extends DataQuery implements SQLConditionGroup
             return null;
         }
 
-        // Allow database to manage joining of conditions
-        $sql = DB::get_conn()->getQueryBuilder()->buildWhereFragment($this->whereQuery, $parameters);
+        $conditions = [];
+        $parameters = [];
+
+        foreach ($where as $clauses) {
+            foreach ($clauses as $clause => $params) {
+                $conditions[] = $clause;
+                $parameters = array_merge($parameters, $params);
+            }
+        }
+
+        $connective = $this->whereQuery->getConnective();
+
+        $sql = " WHERE (" . implode(") {$connective} (", $conditions) . ")";
+
         return preg_replace('/^\s*WHERE\s*/i', '', $sql);
     }
 }

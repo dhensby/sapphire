@@ -11,6 +11,7 @@ use SilverStripe\Control\Director;
 use SilverStripe\Control\Cookie;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\Connect\DBConnector;
+use SilverStripe\ORM\Connect\MySQLQueryBuilder;
 use SilverStripe\ORM\Connect\Query;
 use SilverStripe\ORM\Queries\SQLExpression;
 use SilverStripe\ORM\Connect\Database;
@@ -121,7 +122,8 @@ class DB
     {
         $connection = self::get_conn($name);
         if ($connection) {
-            return $connection->getQueryBuilder()->buildSQL($expression, $parameters);
+            // @todo work out how to use the proper builder
+            return (new MySQLQueryBuilder())->buildSQL($expression, $parameters);
         } else {
             $parameters = array();
             return null;
@@ -262,13 +264,11 @@ class DB
      * Execute the given SQL query.
      * @param string $sql The SQL query to execute
      * @param int $errorLevel The level of error reporting to enable for the query
-     * @return Query
+     * @return \Doctrine\DBAL\Driver\Statement
      */
-    public static function query($sql, $errorLevel = E_USER_ERROR)
+    public static function query($sql)
     {
-        self::$lastQuery = $sql;
-
-        return self::get_conn()->query($sql, $errorLevel);
+        return self::get_conn()->query($sql);
     }
 
     /**
@@ -354,61 +354,11 @@ class DB
      * @param string $sql The SQL query to execute. The ? character will denote parameters.
      * @param array $parameters An ordered list of arguments.
      * @param int $errorLevel The level of error reporting to enable for the query
-     * @return Query
+     * @return \Doctrine\DBAL\Driver\Statement
      */
     public static function prepared_query($sql, $parameters, $errorLevel = E_USER_ERROR)
     {
-        self::$lastQuery = $sql;
-
-        return self::get_conn()->preparedQuery($sql, $parameters, $errorLevel);
-    }
-
-    /**
-     * Execute a complex manipulation on the database.
-     * A manipulation is an array of insert / or update sequences.  The keys of the array are table names,
-     * and the values are map containing 'command' and 'fields'.  Command should be 'insert' or 'update',
-     * and fields should be a map of field names to field values, including quotes.  The field value can
-     * also be a SQL function or similar.
-     *
-     * Example:
-     * <code>
-     * array(
-     *   // Command: insert
-     *   "table name" => array(
-     *      "command" => "insert",
-     *      "fields" => array(
-     *         "ClassName" => "'MyClass'", // if you're setting a literal, you need to escape and provide quotes
-     *         "Created" => "now()", // alternatively, you can call DB functions
-     *         "ID" => 234,
-     *       ),
-     *      "id" => 234 // an alternative to providing ID in the fields list
-     *    ),
-     *
-     *   // Command: update
-     *   "other table" => array(
-     *      "command" => "update",
-     *      "fields" => array(
-     *         "ClassName" => "'MyClass'",
-     *         "LastEdited" => "now()",
-     *       ),
-     *      "where" => "ID = 234",
-     *      "id" => 234 // an alternative to providing a where clause
-     *    ),
-     * )
-     * </code>
-     *
-     * You'll note that only one command on a given table can be called.
-     * That's a limitation of the system that's due to it being written for {@link DataObject::write()},
-     * which needs to do a single write on a number of different tables.
-     *
-     * @todo Update this to support paramaterised queries
-     *
-     * @param array $manipulation
-     */
-    public static function manipulate($manipulation)
-    {
-        self::$lastQuery = $manipulation;
-        self::get_conn()->manipulate($manipulation);
+        return self::get_conn()->executeQuery($sql, $parameters);
     }
 
     /**
@@ -419,7 +369,7 @@ class DB
      */
     public static function get_generated_id($table)
     {
-        return self::get_conn()->getGeneratedID($table);
+        return self::get_conn()->lastInsertId($table);
     }
 
     /**
@@ -610,6 +560,55 @@ class DB
      */
     public static function alteration_message($message, $type = "")
     {
-        self::get_schema()->alterationMessage($message, $type);
+        if (Director::is_cli()) {
+            switch ($type) {
+                case "created":
+                case "changed":
+                case "repaired":
+                    $sign = "+";
+                    break;
+                case "obsolete":
+                case "deleted":
+                    $sign = '-';
+                    break;
+                case "notice":
+                    $sign = '*';
+                    break;
+                case "error":
+                    $sign = "!";
+                    break;
+                default:
+                    $sign = " ";
+            }
+            $message = strip_tags($message);
+            echo "  $sign $message\n";
+        } else {
+            switch ($type) {
+                case "created":
+                    $color = "green";
+                    break;
+                case "obsolete":
+                    $color = "red";
+                    break;
+                case "notice":
+                    $color = "orange";
+                    break;
+                case "error":
+                    $color = "red";
+                    break;
+                case "deleted":
+                    $color = "red";
+                    break;
+                case "changed":
+                    $color = "blue";
+                    break;
+                case "repaired":
+                    $color = "blue";
+                    break;
+                default:
+                    $color = "";
+            }
+            echo "<li style=\"color: $color\">$message</li>";
+        }
     }
 }

@@ -51,33 +51,35 @@ class ExactMatchFilter extends SearchFilter
      */
     protected function oneFilter(DataQuery $query, $inclusive)
     {
+        $expressionBuilder = DB::get_conn()->getExpressionBuilder();
         $this->model = $query->applyRelation($this->relation);
         $field = $this->getDbName();
         $value = $this->getValue();
 
         // Null comparison check
         if ($value === null) {
-            $where = DB::get_conn()->nullCheckClause($field, $inclusive);
+            $where = $inclusive
+                ? DB::get_conn()->getDatabasePlatform()->getIsNullExpression($field)
+                : DB::get_conn()->getDatabasePlatform()->getIsNotNullExpression($field);
             return $query->where($where);
         }
 
-        // Value comparison check
-        $where = DB::get_conn()->comparisonClause(
-            $field,
-            null,
-            true, // exact?
-            !$inclusive, // negate?
-            $this->getCaseSensitive(),
-            true
-        );
+        if ($this->getCaseSensitive() === null) {
+            $where = $inclusive ? $expressionBuilder->eq($field, '?') : $expressionBuilder->neq($field, '?');
+        } else {
+            $where = $inclusive
+                ? $expressionBuilder->comparison($field, $this->getCaseSensitive() ? 'LIKE BINARY' : 'LIKE', '?')
+                : $expressionBuilder->comparison($field, $this->getCaseSensitive() ? 'NOT LIKE BINARY' : 'NOT LIKE', '?');
+        }
+
         // for != clauses include IS NULL values, since they would otherwise be excluded
         if (!$inclusive) {
-            $nullClause = DB::get_conn()->nullCheckClause($field, true);
+            $nullClause = DB::get_conn()->getDatabasePlatform()->getIsNullExpression($field);
             $where .= " OR {$nullClause}";
         }
 
         $clause = [$where => $value];
-        
+
         return $this->aggregate ?
             $this->applyAggregate($query, $clause) :
             $query->where($clause);

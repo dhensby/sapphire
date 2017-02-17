@@ -725,68 +725,6 @@ abstract class DBSchemaManager
     }
 
     /**
-     * Show a message about database alteration
-     *
-     * @param string $message to display
-     * @param string $type one of [created|changed|repaired|obsolete|deleted|error]
-     */
-    public function alterationMessage($message, $type = "")
-    {
-        if (!$this->supressOutput) {
-            if (Director::is_cli()) {
-                switch ($type) {
-                    case "created":
-                    case "changed":
-                    case "repaired":
-                        $sign = "+";
-                        break;
-                    case "obsolete":
-                    case "deleted":
-                        $sign = '-';
-                        break;
-                    case "notice":
-                        $sign = '*';
-                        break;
-                    case "error":
-                        $sign = "!";
-                        break;
-                    default:
-                        $sign = " ";
-                }
-                $message = strip_tags($message);
-                echo "  $sign $message\n";
-            } else {
-                switch ($type) {
-                    case "created":
-                        $color = "green";
-                        break;
-                    case "obsolete":
-                        $color = "red";
-                        break;
-                    case "notice":
-                        $color = "orange";
-                        break;
-                    case "error":
-                        $color = "red";
-                        break;
-                    case "deleted":
-                        $color = "red";
-                        break;
-                    case "changed":
-                        $color = "blue";
-                        break;
-                    case "repaired":
-                        $color = "blue";
-                        break;
-                    default:
-                        $color = "";
-                }
-                echo "<li style=\"color: $color\">$message</li>";
-            }
-        }
-    }
-
-    /**
      * This returns the data type for the id column which is the primary key for each table
      *
      * @param boolean $asDbValue

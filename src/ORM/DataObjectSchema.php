@@ -97,7 +97,11 @@ class DataObjectSchema
         if (!$table) {
             throw new InvalidArgumentException("\"{$field}\" is not a field on class \"{$class}\"");
         }
-        return "\"{$tablePrefix}{$table}\".\"{$field}\"";
+        return sprintf(
+            '%s.%s',
+            DB::get_conn()->quoteIdentifier("{$tablePrefix}{$table}"),
+            DB::get_conn()->quoteIdentifier($field)
+        );
     }
 
     /**
