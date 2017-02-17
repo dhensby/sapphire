@@ -3103,6 +3103,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
                 // Build fields
                 $manymanyFields = array(
+                    'ID' => 'PrimaryKey',
                     $parentField => "Int",
                     $childField => "Int",
                 );
@@ -3123,8 +3124,20 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                         'columns' => [$childField],
                     ],
                 ];
-                // @todo fix tihs up
-//                DB::require_table($tableOrClass, $manymanyFields, $manymanyIndexes, true, null, $extensions);
+                $linkTable = $dbSchema->createTable($tableOrClass);
+                // @todo - add FK constraint support
+                foreach ($manymanyFields as $fieldName => $fieldType) {
+                    /** @var DBField $field */
+                    $fieldSpec = Object::parse_class_spec($fieldType);
+                    $field = DBField::create_field($fieldSpec[0], null, $fieldName);
+                    $field->augmentDBTable($linkTable);
+                }
+
+                foreach ($manymanyIndexes as $indexField => $indexSpec) {
+                    $linkTable->addIndex([
+                        $indexField,
+                    ]);
+                }
             }
         }
 
