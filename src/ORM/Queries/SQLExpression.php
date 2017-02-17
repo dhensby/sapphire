@@ -107,12 +107,12 @@ abstract class SQLExpression
     /**
      * Execute this query.
      *
-     * @return Query
+     * @return \Doctrine\DBAL\Driver\Statement
      */
     public function execute()
     {
         $sql = $this->sql($parameters);
-        return DB::prepared_query($sql, $parameters);
+        return DB::get_conn()->executeQuery($sql, $parameters);
     }
 
     /**

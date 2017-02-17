@@ -735,68 +735,6 @@ abstract class DBSchemaManager
     }
 
     /**
-     * Show a message about database alteration
-     *
-     * @param string $message to display
-     * @param string $type one of [created|changed|repaired|obsolete|deleted|error]
-     */
-    public function alterationMessage($message, $type = "")
-    {
-        if (!$this->supressOutput) {
-            if (Director::is_cli()) {
-                switch ($type) {
-                    case "created":
-                    case "changed":
-                    case "repaired":
-                        $sign = "+";
-                        break;
-                    case "obsolete":
-                    case "deleted":
-                        $sign = '-';
-                        break;
-                    case "notice":
-                        $sign = '*';
-                        break;
-                    case "error":
-                        $sign = "!";
-                        break;
-                    default:
-                        $sign = " ";
-                }
-                $message = strip_tags($message);
-                echo "  $sign $message\n";
-            } else {
-                switch ($type) {
-                    case "created":
-                        $class = "success";
-                        break;
-                    case "obsolete":
-                        $class = "error";
-                        break;
-                    case "notice":
-                        $class = "warning";
-                        break;
-                    case "error":
-                        $class = "error";
-                        break;
-                    case "deleted":
-                        $class = "error";
-                        break;
-                    case "changed":
-                        $class = "info";
-                        break;
-                    case "repaired":
-                        $class = "info";
-                        break;
-                    default:
-                        $class = "";
-                }
-                echo "<li class=\"$class\">$message</li>";
-            }
-        }
-    }
-
-    /**
      * This returns the data type for the id column which is the primary key for each table
      *
      * @param boolean $asDbValue

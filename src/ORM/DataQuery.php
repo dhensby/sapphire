@@ -176,7 +176,9 @@ class DataQuery
         }
 
         $baseTable = DataObject::getSchema()->tableName($baseClass);
-        $this->query->setFrom("\"{$baseTable}\"");
+        $this->query->setFrom(
+            DB::get_conn()->quoteIdentifier($baseTable)
+        );
 
         $obj = Injector::inst()->get($baseClass);
         $obj->extend('augmentDataQueryCreation', $this->query, $this);
@@ -273,7 +275,10 @@ class DataQuery
                 $tableName = $schema->tableName($tableClass);
                 $query->addLeftJoin(
                     $tableName,
-                    "\"{$tableName}\".\"ID\" = {$baseIDColumn}",
+                    sprintf('%s.%s = %s', DB::get_conn()->quoteIdentifier($tableName),
+                        DB::get_conn()->quoteIdentifier('ID'),
+                        $baseIDColumn
+                    ),
                     $tableName,
                     10
                 );
@@ -332,7 +337,8 @@ class DataQuery
         // of DataQuery
 
         $obj = Injector::inst()->get($this->dataClass);
-        $obj->extend('augmentSQL', $query, $this);
+        // @todo fix versioned
+        //$obj->extend('augmentSQL', $query, $this);
 
         $this->ensureSelectContainsOrderbyColumns($query);
 
@@ -378,10 +384,10 @@ class DataQuery
 
                 if (count($parts) == 1) {
                     // Get expression for sort value
-                    $qualCol = "\"{$parts[0]}\"";
+                    $qualCol = DB::get_conn()->quoteIdentifier($parts[0]);
                     $table = DataObject::getSchema()->tableForField($this->dataClass(), $parts[0]);
                     if ($table) {
-                        $qualCol = "\"{$table}\".{$qualCol}";
+                        $qualCol = sprintf('%s.%s', DB::get_conn()->quoteIdentifier($table), $qualCol);
                     }
 
                     // remove original sort
@@ -417,7 +423,7 @@ class DataQuery
     /**
      * Execute the query and return the result as {@link SS_Query} object.
      *
-     * @return Query
+     * @return \Doctrine\DBAL\Driver\Statement
      */
     public function execute()
     {
@@ -1003,7 +1009,12 @@ class DataQuery
                     $ancestorTableAliased = $foreignPrefix . $ancestorTable;
                     $this->query->addLeftJoin(
                         $ancestorTable,
-                        "{$foreignIDColumn} = \"{$ancestorTableAliased}\".\"ID\"",
+                        sprintf(
+                            '%s = %s.%s',
+                            $foreignIDColumn,
+                            DB::get_conn()->quoteIdentifier($ancestorTableAliased),
+                            DB::get_conn()->quoteIdentifier('ID')
+                        ),
                         $ancestorTableAliased
                     );
                 }
@@ -1074,7 +1085,12 @@ class DataQuery
                 $ancestorTableAliased = $componentPrefix . $ancestorTable;
                 $this->query->addLeftJoin(
                     $ancestorTable,
-                    "{$componentIDColumn} = \"{$ancestorTableAliased}\".\"ID\"",
+                    sprintf(
+                        '%s = %s.%s',
+                        $componentIDColumn,
+                        DB::get_conn()->quoteIdentifier($ancestorTableAliased),
+                        DB::get_conn()->quoteIdentifier('ID')
+                    )
                     $ancestorTableAliased
                 );
             }

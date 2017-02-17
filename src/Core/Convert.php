@@ -211,7 +211,10 @@ class Convert
      */
     public static function symbol2sql($identifier, $separator = '.')
     {
-        return DB::get_conn()->escapeIdentifier($identifier, $separator);
+        $parts = array_map(function($part) {
+            return DB::get_conn()->quoteIdentifier($part);
+        }, explode($separator, $identifier));
+        return implode($separator, $parts);
     }
 
     /**

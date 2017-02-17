@@ -584,7 +584,7 @@ class SQLSelect extends SQLConditionalExpression
                 $countQuery->setFrom(array('(' . $clone->sql($innerParameters) . ') all_distinct'));
                 $sql = $countQuery->sql($parameters); // $parameters should be empty
                 $result = DB::prepared_query($sql, $innerParameters);
-                return (int)$result->value();
+                return (int)$result->fetchColumn();
             } else {
                 $clone->setSelect(array("count(*)"));
             }
@@ -593,7 +593,7 @@ class SQLSelect extends SQLConditionalExpression
         }
 
         $clone->setGroupBy(array());
-        return (int)$clone->execute()->value();
+        return (int)$clone->execute()->fetchColumn();
     }
 
     /**
@@ -637,7 +637,7 @@ class SQLSelect extends SQLConditionalExpression
         $clone->orderby = null;
         $clone->groupby = null;
 
-        $count = (int)$clone->execute()->value();
+        $count = (int)$clone->execute()->fetchColumn();
         // If there's a limit set, then that limit is going to heavily affect the count
         if ($this->limit) {
             if ($this->limit['limit'] !== null && $count >= ($this->limit['start'] + $this->limit['limit'])) {
