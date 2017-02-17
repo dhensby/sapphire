@@ -5,8 +5,6 @@ namespace SilverStripe\ORM;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\ConnectionException;
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\DBAL\VersionAwarePlatformDriver;
-use League\Flysystem\Exception;
 use BadMethodCallException;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
@@ -322,10 +320,11 @@ class DatabaseAdmin extends Controller
             $SNG->augmentDBSchema($newSchema);
         }
         $migrateSQL = $currentSchema->getMigrateToSql($newSchema, $conn->getDatabasePlatform());
+        // @todo - should this be in a transaction?
         foreach ($migrateSQL as $qry) {
             $conn->executeQuery($qry);
         }
-        var_export($migrateSQL); die;
+
         ClassInfo::reset_db_cache();
 
         if (!$quiet && !Director::is_cli()) {
@@ -356,12 +355,14 @@ class DatabaseAdmin extends Controller
                     }
                     $table = $schema->baseDataTable($baseDataClass);
 
+                    // @todo use QueryBuilder
                     $updateQuery = "UPDATE \"$table%s\" SET \"ClassName\" = ? WHERE \"ClassName\" = ?";
                     $updateQueries = [sprintf($updateQuery, '')];
 
                     // Remap versioned table ClassName values as well
                     $class = DataObject::singleton($newClassName);
-                    if ($class->has_extension(Versioned::class)) {
+                    // @todo - versioned
+                    if (false && $class->has_extension(Versioned::class)) {
                         if ($class->hasStages()) {
                             $updateQueries[] = sprintf($updateQuery, '_Live');
                         }
@@ -369,7 +370,7 @@ class DatabaseAdmin extends Controller
                     }
 
                     foreach ($updateQueries as $query) {
-                        DB::prepared_query($query, [$newClassName, $oldClassName]);
+                        $conn->executeUpdate($query, [$newClassName, $oldClassName]);
                     }
                 }
             }
