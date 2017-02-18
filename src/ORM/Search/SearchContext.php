@@ -4,6 +4,7 @@ namespace SilverStripe\ORM\Search;
 
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\FormField;
@@ -111,19 +112,19 @@ class SearchContext
         $baseTable = DataObject::getSchema()->baseDataTable($this->modelClass);
         $fields = array(sprintf(
             '%s.*',
-            DB::get_conn()->quoteIdentifier($baseTable)
+            Convert::symbol2sql($baseTable)
         ));
         if ($this->modelClass != $classes[0]) {
             $fields[] = sprintf(
                 '%s.*',
-                DB::get_conn()->quoteIdentifier($baseTable)
+                Convert::symbol2sql($baseTable)
             );
         }
         //$fields = array_keys($model->db());
         $fields[] = sprintf('%s.%s AS %s',
-            DB::get_conn()->quoteIdentifier($classes[0]),
-            DB::get_conn()->quoteIdentifier('ClassName'),
-            DB::get_conn()->quoteIdentifier('RecordClassName')
+            Convert::symbol2sql($classes[0]),
+            Convert::symbol2sql('ClassName'),
+            Convert::symbol2sql('RecordClassName')
         );
         return $fields;
     }

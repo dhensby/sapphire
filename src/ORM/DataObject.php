@@ -2,8 +2,11 @@
 
 namespace SilverStripe\ORM;
 
+use Doctrine\DBAL\Query\QueryBuilder;
+use SilverStripe\Assets\AssetControlExtension;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Resettable;
 use SilverStripe\Dev\Deprecation;
@@ -1267,13 +1270,13 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             return;
         }
 
-        // Perform an insert on the base table
-        $insert = new SQLInsert($baseTable);
-        $insert
-            ->assign('Created', $now)
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(Convert::symbol2sql($baseTable))
+            ->set(Convert::symbol2sql('Created'), $qb->createPositionalParameter($now))
             ->execute();
+
         $this->changed['ID'] = self::CHANGE_VALUE;
-        $this->record['ID'] = DB::get_generated_id($baseTable);
+        $this->record['ID'] = DB::get_conn()->lastInsertId($baseTable);
     }
 
     /**
@@ -1305,17 +1308,16 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             /**
              * @var \Doctrine\DBAL\Connection $conn */
             foreach ($manipulation as $table => $writeInfo) {
-                $qryBuilder = $conn->createQueryBuilder();
+                $qb = $conn->createQueryBuilder();
                 switch ($writeInfo['command']) {
                     case 'update':
                         // Build update
-                        $qryBuilder->update($table);
+                        $qb->update(Convert::symbol2sql($table));
                         $selectQB = $conn->createQueryBuilder();
-                        $selectQB->select('COUNT(*)')->from($table);
+                        $selectQB->select('COUNT(*)')->from(Convert::symbol2sql($table));
 
                         foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
-                            $qryBuilder->set($fieldName, '?');
-                            $qryBuilder->createPositionalParameter($fieldValue);
+                            $qb->set(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
                         }
 
                         // Set best condition to use
@@ -1323,16 +1325,22 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                             // @todo this
                             throw new Exception('need to integrate this');
                         } elseif (!empty($writeInfo['id'])) {
-                            $qryBuilder->where('ID = ?');
-                            $qryBuilder->createPositionalParameter($writeInfo['id']);
-                            $selectQB->where('ID = ?');
-                            $selectQB->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT);
+                            $qb->where(sprintf(
+                                '%s = %s',
+                                Convert::symbol2sql('ID'),
+                                $qb->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT)
+                            ));
+                            $selectQB->where(sprintf(
+                                '%s = %s',
+                                Convert::symbol2sql('ID'),
+                                $selectQB->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT)
+                            ));
                         }
 
                         // Test to see if this update query shouldn't, in fact, be an insert
-                        if ($selectQB->execute()->fetchColumn()) {
+                        if ($selectQB->execute()->fetchColumn() > 0) {
                             // @todo will this work in a transaction?
-                            $qryBuilder->execute();
+                            $qb->execute();
                             break;
                         }
                         // ...if not, we'll skip on to the insert code
@@ -1342,14 +1350,13 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                             $writeInfo['fields']['ID'] = $writeInfo['id'];
                         }
 
-                        $qryBuilder->insert($table);
+                        $qb->insert(Convert::symbol2sql($table));
 
                         foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
-                            $qryBuilder->set($fieldName, '?');
-                            $qryBuilder->createPositionalParameter($fieldValue);
+                            $qb->set(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
                         }
 
-                        $qryBuilder->execute();
+                        $qb->execute();
                         break;
                 }
             }

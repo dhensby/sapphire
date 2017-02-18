@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Filters;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataObject;
@@ -291,8 +292,8 @@ abstract class SearchFilter
             return sprintf(
                 '%s(%s.%s)',
                 $function,
-                DB::get_conn()->quoteIdentifier($tablePrefix.$table),
-                DB::get_conn($column ?: 'ID')
+                Convert::symbol2sql($tablePrefix.$table),
+                Convert::symbol2sql($column ?: 'ID')
             );
         }
 
@@ -302,15 +303,12 @@ abstract class SearchFilter
         if ($table) {
             return $schema->sqlColumnForField($this->model, $this->name, $tablePrefix);
         }
+        return $this->fullName;
         // fallback to the provided name in the event of a joined column
         // name (as the candidate class doesn't check joined records)
-        return $this->fullName;
-        $parts = explode('.', $this->fullName);
-        $parts = array_map(function($part) {
-            return DB::get_conn()->quoteIdentifier($part);
-        }, $parts);
-        return  implode('', $parts) ;
-    }
+        return Convert::symbol2sql($this->fullName);
+
+        }
 
     /**
      * Return the value of the field as processed by the DBField class

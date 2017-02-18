@@ -560,6 +560,7 @@ class DB
      */
     public static function alteration_message($message, $type = "")
     {
+        // @todo move to a logger?
         if (Director::is_cli()) {
             switch ($type) {
                 case "created":
