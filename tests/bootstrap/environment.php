@@ -10,25 +10,22 @@ if (!Environment::getEnv('SS_DATABASE_CLASS') && !Environment::getEnv('SS_DATABA
     // Database connection, including PDO and legacy ORM support
     switch (Environment::getEnv('DB')) {
         case "PGSQL";
-            $pgDatabaseClass = Environment::getEnv('PDO') ? 'PostgrePDODatabase' : 'PostgreSQLDatabase';
-            Environment::setEnv('SS_DATABASE_CLASS', $pgDatabaseClass);
-            Environment::setEnv('SS_DATABASE_USERNAME', 'postgres');
-            Environment::setEnv('SS_DATABASE_PASSWORD', '');
+            $loader->setEnvironmentVariable('SS_DATABASE_CLASS', 'pdo_pgsql');
+            $loader->setEnvironmentVariable('SS_DATABASE_USERNAME', 'postgres');
+            $loader->setEnvironmentVariable('SS_DATABASE_PASSWORD', '');
             break;
 
         case "SQLITE":
-            $sqliteDatabaseClass = Environment::getEnv('PDO') ? 'SQLite3PDODatabase' : 'SQLite3Database';
-            Environment::setEnv('SS_DATABASE_CLASS', $sqliteDatabaseClass);
-            Environment::setEnv('SS_DATABASE_USERNAME', 'root');
-            Environment::setEnv('SS_DATABASE_PASSWORD', '');
-            Environment::setEnv('SS_SQLITE_DATABASE_PATH', ':memory:');
+            $loader->setEnvironmentVariable('SS_DATABASE_CLASS', 'pdo_sqlite');
+            $loader->setEnvironmentVariable('SS_DATABASE_USERNAME', 'root');
+            $loader->setEnvironmentVariable('SS_DATABASE_PASSWORD', '');
+            $loader->setEnvironmentVariable('SS_SQLITE_DATABASE_PATH', ':memory:');
             break;
 
         default:
-            $mysqlDatabaseClass = Environment::getEnv('PDO') ? 'MySQLPDODatabase' : 'MySQLDatabase';
-            Environment::setEnv('SS_DATABASE_CLASS', $mysqlDatabaseClass);
-            Environment::setEnv('SS_DATABASE_USERNAME', 'root');
-            Environment::setEnv('SS_DATABASE_PASSWORD', '');
+            $loader->setEnvironmentVariable('SS_DATABASE_CLASS', Environment::getEnv('PDO') ? 'pdo_mysql' : 'mysqli');
+            $loader->setEnvironmentVariable('SS_DATABASE_USERNAME', 'root');
+            $loader->setEnvironmentVariable('SS_DATABASE_PASSWORD', '');
     }
 
     Environment::setEnv('SS_DATABASE_CHOOSE_NAME', 'true');

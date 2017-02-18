@@ -50,7 +50,7 @@ class TempDatabase
     }
 
     /**
-     * @return Database
+     * @return \Doctrine\DBAL\Connection
      */
     protected function getConn()
     {
@@ -64,7 +64,7 @@ class TempDatabase
      */
     public function isUsed()
     {
-        $selected = $this->getConn()->getSelectedDatabase();
+        $selected = $this->getConn()->getDatabase();
         return $this->isDBTemp($selected);
     }
 
@@ -80,8 +80,8 @@ class TempDatabase
 
         // Check the database actually exists
         $dbConn = $this->getConn();
-        $dbName = $dbConn->getSelectedDatabase();
-        if (!$dbConn->databaseExists($dbName)) {
+        $dbName = $dbConn->getDatabase();
+        if (!in_array($dbName, DB::get_conn()->getSchemaManager()->listDatabases())) {
             return;
         }
 
@@ -94,7 +94,7 @@ class TempDatabase
             }
         }
 
-        $dbConn->dropSelectedDatabase();
+        $dbConn->getSchemaManager()->dropDatabase($dbName);
     }
 
     /**
@@ -137,9 +137,9 @@ class TempDatabase
         $prefix = Environment::getEnv('SS_DATABASE_PREFIX') ?: 'ss_';
         do {
             $dbname = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
-        } while ($dbConn->databaseExists($dbname));
+        } while (in_array($dbname, $dbConn->getSchemaManager()->listDatabases()));
 
-        $dbConn->selectDatabase($dbname, true);
+        $dbConn->getSchemaManager()->createDatabase($dbname);
 
         $this->resetDBSchema();
 
@@ -195,29 +195,26 @@ class TempDatabase
         $dataClasses = ClassInfo::subclassesFor(DataObject::class);
         array_shift($dataClasses);
 
-        $schema = $this->getConn()->getSchemaManager();
-        $schema->quiet();
-        $schema->schemaUpdate(function () use ($dataClasses, $extraDataObjects) {
-            foreach ($dataClasses as $dataClass) {
-                // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
-                if (class_exists($dataClass)) {
-                    $SNG = singleton($dataClass);
-                    if (!($SNG instanceof TestOnly)) {
-                        $SNG->requireTable();
-                    }
+        $dbSchema = DB::get_conn()->getSchemaManager()->createSchema();
+        foreach ($dataClasses as $dataClass) {
+            // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
+            if (class_exists($dataClass)) {
+                $SNG = singleton($dataClass);
+                if (!($SNG instanceof TestOnly)) {
+                    $SNG->augmentDBSchema($dbSchema);
                 }
             }
+        }
 
-            // If we have additional dataobjects which need schema, do so here:
-            if ($extraDataObjects) {
-                foreach ($extraDataObjects as $dataClass) {
-                    $SNG = singleton($dataClass);
-                    if (singleton($dataClass) instanceof DataObject) {
-                        $SNG->requireTable();
-                    }
+        // If we have additional dataobjects which need schema, do so here:
+        if ($extraDataObjects) {
+            foreach ($extraDataObjects as $dataClass) {
+                $SNG = singleton($dataClass);
+                if (singleton($dataClass) instanceof DataObject) {
+                    $SNG->augmentDBSchema($dbSchema);
                 }
             }
-        });
+        }
 
         ClassInfo::reset_db_cache();
         DataObject::singleton()->flushCache();
