@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Dev;
 
+use Doctrine\DBAL\Schema\Schema;
 use Exception;
 use LogicException;
 use PHPUnit\Framework\Constraint\LogicalNot;
@@ -17,6 +18,14 @@ use SilverStripe\Control\Email\Mailer;
 use SilverStripe\Control\HTTPApplication;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Config\ConfigLoader;
+use SilverStripe\Core\Config\CoreConfigFactory;
+use SilverStripe\Core\Config\DefaultConfig;
+use SilverStripe\Core\Config\Middleware\ExtensionMiddleware;
+use SilverStripe\Core\Extension;
+use SilverStripe\Core\Convert;
+use SilverStripe\Core\Flushable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Injector\InjectorLoader;
 use SilverStripe\Core\Manifest\ClassLoader;

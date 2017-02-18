@@ -141,6 +141,8 @@ class TempDatabase
 
         $dbConn->getSchemaManager()->createDatabase($dbname);
 
+        $dbConn->executeQuery(sprintf('USE %s', Convert::symbol2sql($dbname)));
+
         $this->resetDBSchema();
 
         // Reinstate PHPUnit error handling
@@ -167,7 +169,7 @@ class TempDatabase
     public function deleteAll()
     {
         $schema = $this->getConn()->getSchemaManager();
-        foreach ($schema->databaseList() as $dbName) {
+        foreach ($schema->listDatabases() as $dbName) {
             if ($this->isDBTemp($dbName)) {
                 $schema->dropDatabase($dbName);
                 $schema->alterationMessage("Dropped database \"$dbName\"", 'deleted');
@@ -195,7 +197,8 @@ class TempDatabase
         $dataClasses = ClassInfo::subclassesFor(DataObject::class);
         array_shift($dataClasses);
 
-        $dbSchema = DB::get_conn()->getSchemaManager()->createSchema();
+        $currentSchema = DB::get_conn()->getSchemaManager()->createSchema();
+        $dbSchema = new Schema();
         foreach ($dataClasses as $dataClass) {
             // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
             if (class_exists($dataClass)) {
@@ -214,6 +217,11 @@ class TempDatabase
                     $SNG->augmentDBSchema($dbSchema);
                 }
             }
+        }
+
+        // build the DB
+        foreach ($currentSchema->getMigrateToSql($dbSchema, DB::get_conn()->getDatabasePlatform()) as $qry) {
+            DB::get_conn()->executeQuery($qry);
         }
 
         ClassInfo::reset_db_cache();
