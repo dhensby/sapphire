@@ -1075,8 +1075,8 @@ class SapphireTest extends PHPUnit_Framework_TestCase
         // Delete our temporary database
         if (self::using_temp_db()) {
             $dbConn = DB::get_conn();
-            $dbName = $dbConn->getSelectedDatabase();
-            if ($dbName && DB::get_conn()->databaseExists($dbName)) {
+            $dbName = $dbConn->getDatabase();
+            if ($dbName && in_array($dbName, DB::get_conn()->getSchemaManager()->listDatabases())) {
                 // Some DataExtensions keep a static cache of information that needs to
                 // be reset whenever the database is killed
                 foreach (ClassInfo::subclassesFor(DataExtension::class) as $class) {
@@ -1087,7 +1087,7 @@ class SapphireTest extends PHPUnit_Framework_TestCase
                 }
 
                 // echo "Deleted temp database " . $dbConn->currentDatabase() . "\n";
-                $dbConn->dropSelectedDatabase();
+                $dbConn->getSchemaManager()->dropDatabase($dbName);
             }
         }
     }
@@ -1125,9 +1125,9 @@ class SapphireTest extends PHPUnit_Framework_TestCase
         $prefix = getenv('SS_DATABASE_PREFIX') ?: 'ss_';
         do {
             $dbname = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
-        } while ($dbConn->databaseExists($dbname));
+        } while (in_array($dbname, $dbConn->getSchemaManager()->listDatabases()));
 
-        $dbConn->selectDatabase($dbname, true);
+        $dbConn->getSchemaManager()->createDatabase($dbname);
 
         static::resetDBSchema();
 
@@ -1173,30 +1173,29 @@ class SapphireTest extends PHPUnit_Framework_TestCase
             $dataClasses = ClassInfo::subclassesFor(DataObject::class);
             array_shift($dataClasses);
 
-            DB::quiet();
-            $schema = DB::get_schema();
-            $extraDataObjects = $includeExtraDataObjects ? static::getExtraDataObjects() : null;
-            $schema->schemaUpdate(function () use ($dataClasses, $extraDataObjects) {
-                foreach ($dataClasses as $dataClass) {
-                    // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
-                    if (class_exists($dataClass)) {
-                        $SNG = singleton($dataClass);
-                        if (!($SNG instanceof TestOnly)) {
-                            $SNG->requireTable();
-                        }
+            $dbSchema = DB::get_conn()->getSchemaManager()->createSchema();
+            foreach ($dataClasses as $dataClass) {
+                // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
+                if (class_exists($dataClass)) {
+                    /** @var DataObject $SNG */
+                    $SNG = singleton($dataClass);
+                    if (!($SNG instanceof TestOnly)) {
+                        $SNG->augmentDBSchema($dbSchema);
                     }
                 }
+            }
 
-                // If we have additional dataobjects which need schema, do so here:
-                if ($extraDataObjects) {
-                    foreach ($extraDataObjects as $dataClass) {
-                        $SNG = singleton($dataClass);
-                        if (singleton($dataClass) instanceof DataObject) {
-                            $SNG->requireTable();
-                        }
+            $extraDataObjects = $includeExtraDataObjects ? static::getExtraDataObjects() : null;
+
+            // If we have additional dataobjects which need schema, do so here:
+            if ($extraDataObjects) {
+                foreach ($extraDataObjects as $dataClass) {
+                    $SNG = singleton($dataClass);
+                    if (singleton($dataClass) instanceof DataObject) {
+                        $SNG->augmentDBSchema($dbSchema);
                     }
                 }
-            });
+            }
 
             ClassInfo::reset_db_cache();
             DataObject::singleton()->flushCache();
