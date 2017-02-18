@@ -805,10 +805,10 @@ class Member extends DataObject
         if ($this->$identifierField) {
             // Note: Same logic as Member_Validator class
             $filter = [
-                "\"Member\".\"$identifierField\"" => $this->$identifierField
+                Convert::symbol2sql("Member.$identifierField") => $this->$identifierField
             ];
             if ($this->ID) {
-                $filter[] = array('"Member"."ID" <> ?' => $this->ID);
+                $filter[] = array(Convert::symbol2sql('Member.ID') . ' <> ?' => $this->ID);
             }
             $existingRecord = DataObject::get_one(Member::class, $filter);
 

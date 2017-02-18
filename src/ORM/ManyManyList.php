@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM;
 
 use BadMethodCallException;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\ORM\Queries\SQLDelete;
@@ -176,7 +177,7 @@ class ManyManyList extends RelationList
         }
 
         // Apply relation filter
-        $key = "\"{$this->joinTable}\".\"{$this->foreignKey}\"";
+        $key = Convert::symbol2sql("{$this->joinTable}.{$this->foreignKey}");
         if (is_array($id)) {
             return array("$key IN (".DB::placeholders($id).")"  => $id);
         } elseif ($id !== null) {
@@ -251,10 +252,10 @@ class ManyManyList extends RelationList
                 // With the current query, simply add the foreign and local conditions
                 // The query can be a bit odd, especially if custom relation classes
                 // don't join expected tables (@see Member_GroupSet for example).
-                $query = new SQLSelect("*", "\"{$this->joinTable}\"");
+                $query = new SQLSelect("*", Convert::symbol2sql($this->joinTable));
                 $query->addWhere($foreignFilter);
                 $query->addWhere(array(
-                    "\"{$this->joinTable}\".\"{$this->localKey}\"" => $itemID
+                    Convert::symbol2sql("{$this->joinTable}.{$this->localKey}") => $itemID
                 ));
                 $hasExisting = ($query->count() > 0);
             } else {
@@ -270,8 +271,8 @@ class ManyManyList extends RelationList
             );
             if ($hasExisting) {
                 $manipulation[$this->joinTable]['where'] = array(
-                    "\"{$this->joinTable}\".\"{$this->foreignKey}\"" => $foreignID,
-                    "\"{$this->joinTable}\".\"{$this->localKey}\"" => $itemID
+                    Convert::symbol2sql("{$this->joinTable}.{$this->foreignKey}") => $foreignID,
+                    Convert::symbol2sql("{$this->joinTable}.{$this->localKey}") => $itemID
                 );
             }
 

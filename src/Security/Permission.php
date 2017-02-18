@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Security;
 
+use Doctrine\DBAL\Connection;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Resettable;
@@ -230,43 +231,43 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
         }
         $groupClause = DB::placeholders($groupParams);
 
+
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('ID'));
+        $qb->from(Convert::symbol2sql('Permission'));
+        $qb->where($qb->expr()->in(Convert::symbol2sql('Code'), "$codeClause $adminClause"));
+        $where = $qb->expr()->andX(
+            $qb->expr()->eq(Convert::symbol2sql('Type'), '?'),
+            $qb->expr()->in(Convert::symbol2sql('GroupID'), $groupClause)
+        );
+
         // Arg component
-        $argClause = "";
-        $argParams = array();
+        $argParams = [];
         switch ($arg) {
             case "any":
                 break;
             case "all":
-                $argClause = " AND \"Arg\" = ?";
+                $where->add($qb->expr()->eq(Convert::symbol2sql('Arg'), '?'));
                 $argParams = array(-1);
                 break;
             default:
                 if (is_numeric($arg)) {
-                    $argClause = "AND \"Arg\" IN (?, ?) ";
+                    $where->add($qb->expr()->in(Convert::symbol2sql('Arg'), array('?', '?')));
                     $argParams = array(-1, $arg);
                 } else {
                     user_error("Permission::checkMember: bad arg '$arg'", E_USER_ERROR);
                 }
         }
 
+
         // Raw SQL for efficiency
-        $permission = DB::prepared_query(
-            "SELECT \"ID\"
-			FROM \"Permission\"
-			WHERE (
-				\"Code\" IN ($codeClause $adminClause)
-				AND \"Type\" = ?
-				AND \"GroupID\" IN ($groupClause)
-				$argClause
-			)",
-            array_merge(
+        $permission = DB::get_conn()->executeQuery($qb->getSQL(), array_merge(
                 $codeParams,
                 $adminParams,
                 array(self::GRANT_PERMISSION),
                 $groupParams,
                 $argParams
-            )
-        )->value();
+            ))->fetchColumn();
 
         if ($permission) {
             return $permission;
@@ -274,15 +275,15 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
 
         // Strict checking disabled?
         if (!static::config()->strict_checking || !$strict) {
-            $hasPermission = DB::prepared_query(
-                "SELECT COUNT(*)
-				FROM \"Permission\"
-				WHERE (
-					\"Code\" IN ($codeClause) AND
-					\"Type\" = ?
-				)",
-                array_merge($codeParams, array(self::GRANT_PERMISSION))
-            )->value();
+            $qb = DB::get_conn()->createQueryBuilder();
+            $qb->select(DB::get_conn()->getDatabasePlatform()->getCountExpression('*'));
+            $qb->from(Convert::symbol2sql('Permission'));
+            $qb->where($qb->expr()->in(Convert::symbol2sql('Code'), $qb->createPositionalParameter($codeParams, Connection::PARAM_STR_ARRAY)));
+            $qb->andWhere($qb->expr()->eq(Convert::symbol2sql('Type'), $qb->createPositionalParameter(self::GRANT_PERMISSION)));
+
+            $hasPermission = DB::get_conn()->executeQuery($qb->getSQL(), $qb->getParameters(), $qb->getParameterTypes())
+                ->fetchColumn();
+
 
             if (!$hasPermission) {
                 return false;

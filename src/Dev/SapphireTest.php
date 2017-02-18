@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Dev;
 
+use Doctrine\DBAL\Schema\Schema;
 use SilverStripe\CMS\Controllers\RootURLController;
 use SilverStripe\Control\Cookie;
 use SilverStripe\Control\Email\Email;
@@ -17,6 +18,7 @@ use SilverStripe\Core\Config\CoreConfigFactory;
 use SilverStripe\Core\Config\DefaultConfig;
 use SilverStripe\Core\Config\Middleware\ExtensionMiddleware;
 use SilverStripe\Core\Extension;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Flushable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Manifest\ClassManifest;
@@ -1067,7 +1069,7 @@ class SapphireTest extends PHPUnit_Framework_TestCase
     {
         $dbConn = DB::get_conn();
         $prefix = getenv('SS_DATABASE_PREFIX') ?: 'ss_';
-        return 1 === preg_match(sprintf('/^%stmpdb_[0-9]+_[0-9]+$/i', preg_quote($prefix, '/')), $dbConn->getSelectedDatabase());
+        return 1 === preg_match(sprintf('/^%stmpdb_[0-9]+_[0-9]+$/i', preg_quote($prefix, '/')), $dbConn->getDatabase());
     }
 
     public static function kill_temp_db()
@@ -1119,15 +1121,20 @@ class SapphireTest extends PHPUnit_Framework_TestCase
 
         // Create a temporary database, and force the connection to use UTC for time
         global $databaseConfig;
-        $databaseConfig['timezone'] = '+0:00';
-        DB::connect($databaseConfig);
+        $testDBConfig = $databaseConfig;
+        $testDBConfig['timezone'] = '+0:00';
+        // we need to unset the DB name for tests or we could fail to connect if it doesn't exist
+        unset($testDBConfig['dbname']);
+        DB::connect($testDBConfig);
         $dbConn = DB::get_conn();
         $prefix = getenv('SS_DATABASE_PREFIX') ?: 'ss_';
         do {
             $dbname = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
         } while (in_array($dbname, $dbConn->getSchemaManager()->listDatabases()));
 
-        $dbConn->getSchemaManager()->createDatabase($dbname);
+        $dbConn->getSchemaManager()->createDatabase($dbName);
+
+        $dbConn->executeQuery(sprintf('USE %s', Convert::symbol2sql($dbName)));
 
         static::resetDBSchema();
 
@@ -1139,13 +1146,13 @@ class SapphireTest extends PHPUnit_Framework_TestCase
             static::kill_temp_db();
         });
 
-        return $dbname;
+        return $dbName;
     }
 
     public static function delete_all_temp_dbs()
     {
         $prefix = getenv('SS_DATABASE_PREFIX') ?: 'ss_';
-        foreach (DB::get_schema()->databaseList() as $dbName) {
+        foreach (DB::get_schema()->listDatabases() as $dbName) {
             if (1 === preg_match(sprintf('/^%stmpdb_[0-9]+_[0-9]+$/i', preg_quote($prefix, '/')), $dbName)) {
                 DB::get_schema()->dropDatabase($dbName);
                 if (Director::is_cli()) {
@@ -1173,7 +1180,8 @@ class SapphireTest extends PHPUnit_Framework_TestCase
             $dataClasses = ClassInfo::subclassesFor(DataObject::class);
             array_shift($dataClasses);
 
-            $dbSchema = DB::get_conn()->getSchemaManager()->createSchema();
+            $currentSchema = DB::get_conn()->getSchemaManager()->createSchema();
+            $dbSchema = new Schema();
             foreach ($dataClasses as $dataClass) {
                 // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
                 if (class_exists($dataClass)) {
@@ -1195,6 +1203,11 @@ class SapphireTest extends PHPUnit_Framework_TestCase
                         $SNG->augmentDBSchema($dbSchema);
                     }
                 }
+            }
+
+            // build the DB
+            foreach ($currentSchema->getMigrateToSql($dbSchema, DB::get_conn()->getDatabasePlatform()) as $qry) {
+                DB::get_conn()->executeQuery($qry);
             }
 
             ClassInfo::reset_db_cache();
