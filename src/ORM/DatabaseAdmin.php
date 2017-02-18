@@ -9,6 +9,7 @@ use BadMethodCallException;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Manifest\ClassLoader;
 use SilverStripe\Dev\DevelopmentAdmin;
@@ -289,30 +290,32 @@ class DatabaseAdmin extends Controller
             }
         }
 
+        /** @var DataObjectSchema $doSchema */
+        $doSchema = Injector::inst()->get(DataObjectSchema::class);
+
         // Initiate schema update
         $currentSchema = $conn->getSchemaManager()->createSchema();
-        $newSchema = new Schema();
-            $dataObjectSchema = DataObject::getSchema();
-
-            foreach ($dataClasses as $dataClass) {
-                // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
-                if (!class_exists($dataClass)) {
-                    continue;
-                }
+        $newSchema = new Schema() ;
+        foreach ($dataClasses as $dataClass) {
+            // Check if class exists before trying to instantiate - this sidesteps any manifest weirdness
+            if (!class_exists($dataClass)) {
+                continue;
+            }
 
             // Check if this class should be excluded as per testing conventions
             $SNG = singleton($dataClass);
             if (!$testMode && $SNG instanceof TestOnly) {
                 continue;
             }
-                $tableName = $dataObjectSchema->tableName($dataClass);
+            $tableName = $doSchema->tableName($dataClass);
 
             // Log data
             if (!$quiet) {
+                $message = sprintf('%s (class: %s)', $tableName, $dataClass);
                 if (Director::is_cli()) {
-                    echo " * $tableName\n";
+                    echo " * $message\n";
                 } else {
-                    echo "<li>$tableName</li>\n";
+                    echo "<li>$message</li>\n";
                 }
             }
 
