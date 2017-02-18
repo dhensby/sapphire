@@ -177,7 +177,7 @@ class DataQuery
 
         $baseTable = DataObject::getSchema()->tableName($baseClass);
         $this->query->setFrom(
-            DB::get_conn()->quoteIdentifier($baseTable)
+            Convert::symbol2sql($baseTable)
         );
 
         $obj = Injector::inst()->get($baseClass);
@@ -275,8 +275,9 @@ class DataQuery
                 $tableName = $schema->tableName($tableClass);
                 $query->addLeftJoin(
                     $tableName,
-                    sprintf('%s.%s = %s', DB::get_conn()->quoteIdentifier($tableName),
-                        DB::get_conn()->quoteIdentifier('ID'),
+                    sprintf('%s.%s = %s',
+                        Convert::symbol2sql($tableName),
+                        Convert::symbol2sql('ID'),
                         $baseIDColumn
                     ),
                     $tableName,
@@ -384,10 +385,10 @@ class DataQuery
 
                 if (count($parts) == 1) {
                     // Get expression for sort value
-                    $qualCol = DB::get_conn()->quoteIdentifier($parts[0]);
+                    $qualCol = Convert::symbol2sql($parts[0]);
                     $table = DataObject::getSchema()->tableForField($this->dataClass(), $parts[0]);
                     if ($table) {
-                        $qualCol = sprintf('%s.%s', DB::get_conn()->quoteIdentifier($table), $qualCol);
+                        $qualCol = sprintf('%s.%s', Convert::symbol2sql($table), $qualCol);
                     }
 
                     // remove original sort
@@ -948,7 +949,7 @@ class DataQuery
                 $ancestorTableAliased = $foreignPrefix . $ancestorTable;
                 $this->query->addLeftJoin(
                     $ancestorTable,
-                    "\"{$foreignTableAliased}\".\"ID\" = \"{$ancestorTableAliased}\".\"ID\"",
+                    sprintf('%s = %s', Convert::symbol2sql("{$foreignTableAliased}.ID"), Convert::symbol2sql("{$ancestorTableAliased}.ID")),
                     $ancestorTableAliased
                 );
             }
@@ -1012,8 +1013,8 @@ class DataQuery
                         sprintf(
                             '%s = %s.%s',
                             $foreignIDColumn,
-                            DB::get_conn()->quoteIdentifier($ancestorTableAliased),
-                            DB::get_conn()->quoteIdentifier('ID')
+                            Convert::symbol2sql($ancestorTableAliased),
+                            Convert::symbol2sql('ID')
                         ),
                         $ancestorTableAliased
                     );
@@ -1063,7 +1064,7 @@ class DataQuery
         $parentIDColumn = $schema->sqlColumnForField($parentClass, 'ID', $parentPrefix);
         $this->query->addLeftJoin(
             $relationClassOrTable,
-            "\"{$relationAliasedTable}\".\"{$parentField}\" = {$parentIDColumn}",
+            sprintf('%s = %s', Convert::symbol2sql("{$relationAliasedTable}.{$parentField}"), $parentIDColumn),
             $relationAliasedTable
         );
 
@@ -1071,7 +1072,7 @@ class DataQuery
         $componentIDColumn = $schema->sqlColumnForField($componentBaseClass, 'ID', $componentPrefix);
             $this->query->addLeftJoin(
                 $componentBaseTable,
-                "\"{$relationAliasedTable}\".\"{$componentField}\" = {$componentIDColumn}",
+                sprintf('%s = %s', Convert::symbol2sql("{$relationAliasedTable}.{$componentField}"), $componentIDColumn),
                 $componentAliasedTable
             );
 
@@ -1088,9 +1089,9 @@ class DataQuery
                     sprintf(
                         '%s = %s.%s',
                         $componentIDColumn,
-                        DB::get_conn()->quoteIdentifier($ancestorTableAliased),
-                        DB::get_conn()->quoteIdentifier('ID')
-                    )
+                        Convert::symbol2sql($ancestorTableAliased),
+                        Convert::symbol2sql('ID')
+                    ),
                     $ancestorTableAliased
                 );
             }

@@ -3,6 +3,8 @@
 namespace SilverStripe\ORM;
 
 use Exception;
+use SilverStripe\Core\Convert;
+use SilverStripe\Core\Injector\Injectable;
 use InvalidArgumentException;
 use LogicException;
 use SilverStripe\Core\ClassInfo;
@@ -108,8 +110,8 @@ class DataObjectSchema
         }
         return sprintf(
             '%s.%s',
-            DB::get_conn()->quoteIdentifier("{$tablePrefix}{$table}"),
-            DB::get_conn()->quoteIdentifier($field)
+            Convert::symbol2sql("{$tablePrefix}{$table}"),
+            Convert::symbol2sql($field)
         );
     }
 
