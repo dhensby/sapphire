@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Forms\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\Forms\Tests\CheckboxSetFieldTest\Article;
 use SilverStripe\Forms\Tests\CheckboxSetFieldTest\Tag;
 use SilverStripe\ORM\ArrayList;
@@ -115,13 +116,16 @@ class CheckboxSetFieldTest extends SapphireTest
         /* Saving should work */
         $field->saveInto($article);
 
+        $qb = DB::get_conn()->createQueryBuilder();
         $this->assertNull(
-            DB::prepared_query(
-                "SELECT *
-				FROM \"CheckboxSetFieldTest_Article_Tags\"
-				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_ArticleID\" = ?",
-                array($article->ID)
-            )->value(),
+            $qb->select('*')
+                ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags'))
+                ->where(
+                    $qb->expr()->eq(
+                        Convert::symbol2sql("CheckboxSetFieldTest_Article_Tags"."CheckboxSetFieldTest_ArticleID"),
+                        $qb->createPositionalParameter($article->ID)
+                    )
+                )->execute()->fetchColumn(),
             'Nothing should go into manymany join table for a saved field without any ticked boxes'
         );
     }

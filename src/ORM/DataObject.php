@@ -1446,8 +1446,12 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             ->dataQuery()
             ->query();
         foreach ($srcQuery->queriedTables() as $table) {
-            $delete = new SQLDelete("\"$table\"", array('"ID"' => $this->ID));
-            $delete->execute();
+            $qb = DB::get_conn()->createQueryBuilder();
+            $qb->delete($table)
+                ->where(
+                    $qb->expr()->eq(Convert::symbol2sql('ID'), $qb->createPositionalParameter($this->ID))
+                );
+            $qb->execute();
         }
         // Remove this item out of any caches
         $this->flushCache();

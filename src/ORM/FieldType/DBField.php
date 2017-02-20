@@ -513,6 +513,7 @@ abstract class DBField extends ViewableData
     {
         return [
             'default' => $this->getDefaultValue(),
+            'notnull' => false,
         ];
     }
 

@@ -404,9 +404,9 @@ class ManyManyList extends RelationList
 
         $cleanExtraFields = array();
         foreach ($this->extraFields as $fieldName => $dbFieldSpec) {
-            $cleanExtraFields[] = "\"{$fieldName}\"";
+            $cleanExtraFields[] = Convert::symbol2sql($fieldName);
         }
-        $query = new SQLSelect($cleanExtraFields, "\"{$this->joinTable}\"");
+        $query = new SQLSelect($cleanExtraFields, Convert::symbol2sql($this->joinTable));
         $filter = $this->foreignIDWriteFilter($this->getForeignID());
         if ($filter) {
             $query->setWhere($filter);
@@ -414,9 +414,9 @@ class ManyManyList extends RelationList
             throw new BadMethodCallException("Can't call ManyManyList::getExtraData() until a foreign ID is set");
         }
         $query->addWhere(array(
-            "\"{$this->joinTable}\".\"{$this->localKey}\"" => $itemID
+            Convert::symbol2sql("{$this->joinTable}.{$this->localKey}") => $itemID
         ));
-        $queryResult = $query->execute()->current();
+        $queryResult = $query->execute()->fetch(\PDO::FETCH_ASSOC);
         if ($queryResult) {
             foreach ($queryResult as $fieldName => $value) {
                 $result[$fieldName] = $value;

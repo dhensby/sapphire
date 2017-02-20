@@ -408,13 +408,14 @@ class DB
         static::get_conn()->transactional(function ($conn) use ($manipulation) {
             /** @var \Doctrine\DBAL\Connection $conn */
             foreach ($manipulation as $table => $writeInfo) {
-                $qb = $conn->createQueryBuilder();
                 switch ($writeInfo['command']) {
                     case 'update':
+                        $qb = $conn->createQueryBuilder();
                         // Build update
                         $qb->update(Convert::symbol2sql($table));
                         $selectQB = $conn->createQueryBuilder();
-                        $selectQB->select('COUNT(*)')->from(Convert::symbol2sql($table));
+                        $selectQB->select('COUNT(*)')
+                            ->from(Convert::symbol2sql($table));
 
                         foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
                             $qb->set(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
@@ -453,12 +454,13 @@ class DB
                         // no break
                     // ...if not, we'll skip on to the insert code
                     case 'insert':
+                        $qb = DB::get_conn()->createQueryBuilder();
+                        $qb->insert(Convert::symbol2sql($table));
+
                         // Ensure that the ID clause is given if possible
                         if (!isset($writeInfo['fields']['ID']) && isset($writeInfo['id'])) {
                             $writeInfo['fields']['ID'] = $writeInfo['id'];
                         }
-
-                        $qb->insert(Convert::symbol2sql($table));
 
                         foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
                             $qb->setValue(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));

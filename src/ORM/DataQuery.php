@@ -399,7 +399,7 @@ class DataQuery
                         $query->selectField($qualCol);
                     }
                 } else {
-                    $qualCol = Convert::symbol2sql(implode('.', $parts));
+                    $qualCol = implode('.', $parts);
 
                     if (!in_array($qualCol, $query->getSelect())) {
                         unset($newOrderby[$k]);

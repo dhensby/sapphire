@@ -1137,7 +1137,7 @@ class SapphireTest extends PHPUnit_Framework_TestCase
 
         $dbConn->getSchemaManager()->createDatabase($dbName);
 
-        $dbConn->executeQuery(sprintf('USE %s', Convert::symbol2sql($dbName)));
+        $dbConn->query(sprintf('USE %s', Convert::symbol2sql($dbName)));
 
         static::resetDBSchema();
 

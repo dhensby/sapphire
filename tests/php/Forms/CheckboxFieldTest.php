@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Forms\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\Control\Controller;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
@@ -100,8 +101,10 @@ class CheckboxFieldTest extends SapphireTest
 
         /* Check that IsChecked column contains a 1 */
         $this->assertEquals(
-            DB::query("SELECT \"IsChecked\" FROM \"CheckboxFieldTest_Article\"")->value(),
             1,
+            DB::get_conn()->createQueryBuilder()
+                ->select(Convert::symbol2sql('IsChecked'))
+                ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(\PDO::FETCH_COLUMN),
             'We have a 1 set in the database, because the field saved into as a 1'
         );
 
@@ -125,8 +128,10 @@ class CheckboxFieldTest extends SapphireTest
 
         /* Check that IsChecked column contains a 0 */
         $this->assertEquals(
-            DB::query("SELECT \"IsChecked\" FROM \"CheckboxFieldTest_Article\"")->value(),
             0,
+            DB::get_conn()->createQueryBuilder()
+              ->select(Convert::symbol2sql('IsChecked'))
+              ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(\PDO::FETCH_COLUMN),
             'We have a 0 set in the database, because the field saved into as a 0'
         );
 
