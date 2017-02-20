@@ -301,29 +301,34 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
     public static function permissions_for_member($memberID)
     {
         $groupList = self::groupList($memberID);
-
         if ($groupList) {
-            $groupCSV = implode(", ", $groupList);
+            $qb = DB::get_conn()->createQueryBuilder();
+            $qb->select(Convert::symbol2sql('Code'))
+                ->from(Convert::symbol2sql('Permission'))
+                ->where(
+                    $qb->expr()->in(
+                        Convert::symbol2sql('GroupID'),
+                        $qb->createPositionalParameter($groupList, Connection::PARAM_STR_ARRAY)
+                    )
+                );
 
-            $allowed = array_unique(DB::query("
-				SELECT \"Code\"
-				FROM \"Permission\"
-				WHERE \"Type\" = " . self::GRANT_PERMISSION . " AND \"GroupID\" IN ($groupCSV)
+            $allowedQB = clone $qb;
+            $allowedQB->andWhere(
+                $allowedQB->expr()->eq(
+                    Convert::symbol2sql('Type'),
+                    $allowedQB->createPositionalParameter(self::GRANT_PERMISSION)
+                )
+            );
+            $allowed = array_unique($allowedQB->execute()->fetchAll(\PDO::FETCH_COLUMN));
 
-				UNION
-
-				SELECT \"Code\"
-				FROM \"PermissionRoleCode\" PRC
-				INNER JOIN \"PermissionRole\" PR ON PRC.\"RoleID\" = PR.\"ID\"
-				INNER JOIN \"Group_Roles\" GR ON GR.\"PermissionRoleID\" = PR.\"ID\"
-				WHERE \"GroupID\" IN ($groupCSV)
-			")->column());
-
-            $denied = array_unique(DB::query("
-				SELECT \"Code\"
-				FROM \"Permission\"
-				WHERE \"Type\" = " . self::DENY_PERMISSION . " AND \"GroupID\" IN ($groupCSV)
-			")->column());
+            $deniedQB = clone $qb;
+            $deniedQB->andWhere(
+                $deniedQB->expr()->eq(
+                    Convert::symbol2sql('Type'),
+                    $deniedQB->createPositionalParameter(self::DENY_PERMISSION)
+                )
+            );
+            $denied = array_unique($deniedQB->execute()->fetchAll(\PDO::FETCH_COLUMN));
 
             return array_diff($allowed, $denied);
         }

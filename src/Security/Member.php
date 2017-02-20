@@ -1021,7 +1021,7 @@ class Member extends DataObject
             $groupCheckObj = DataObject::get_by_id(Group::class, $group);
         } elseif (is_string($group)) {
             $groupCheckObj = DataObject::get_one(Group::class, array(
-                '"Group"."Code"' => $group
+                Convert::symbol2sql('Group.Code') => $group
             ));
         } elseif ($group instanceof Group) {
             $groupCheckObj = $group;
@@ -1055,7 +1055,7 @@ class Member extends DataObject
     public function addToGroupByCode($groupcode, $title = "")
     {
         $group = DataObject::get_one(Group::class, array(
-            '"Group"."Code"' => $groupcode
+            Convert::symbol2sql('Group.Code') => $groupcode
         ));
 
         if ($group) {
