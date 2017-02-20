@@ -369,11 +369,11 @@ class ManyManyList extends RelationList
         // Use a sub-query as SQLite does not support setting delete targets in
         // joined queries.
         $delete = new SQLDelete();
-        $delete->setFrom("\"{$this->joinTable}\"");
+        $delete->setFrom(Convert::symbol2sql($this->joinTable));
         $delete->addWhere($this->foreignIDFilter());
         $subSelect = $selectQuery->sql($parameters);
         $delete->addWhere(array(
-            "\"{$this->joinTable}\".\"{$this->localKey}\" IN ($subSelect)" => $parameters
+            sprintf('%s IN (%s)', Convert::symbol2sql("{$this->joinTable}.{$this->localKey}"), $subSelect) => $parameters
         ));
         $delete->execute();
     }
