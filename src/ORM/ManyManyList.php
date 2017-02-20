@@ -81,7 +81,7 @@ class ManyManyList extends RelationList
         $dataClassIDColumn = DataObject::getSchema()->sqlColumnForField($this->dataClass(), 'ID');
         $this->dataQuery->innerJoin(
             $this->joinTable,
-            "\"{$this->joinTable}\".\"{$this->localKey}\" = {$dataClassIDColumn}"
+            sprintf('%s = %s', Convert::symbol2sql("{$this->joinTable}.{$this->localKey}"), $dataClassIDColumn)
         );
 
         // Add the extra fields to the query

@@ -1367,9 +1367,11 @@ class Member extends DataObject
             $permsClause = DB::placeholders($perms);
             /** @skipUpgrade */
             $groups = Group::get()
-                ->innerJoin("Permission", '"Permission"."GroupID" = "Group"."ID"')
+                ->innerJoin("Permission",
+                    sprintf('%s = %s', Convert::symbol2sql('Permission.GroupID'), Convert::symbol2sql('Group.ID'))
+                )
                 ->where(array(
-                    "\"Permission\".\"Code\" IN ($permsClause)" => $perms
+                    DB::get_conn()->getExpressionBuilder()->in(Convert::symbol2sql('Permission.Code'), $permsClause) => $perms
                 ));
         }
 
