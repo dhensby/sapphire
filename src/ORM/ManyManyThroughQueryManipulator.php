@@ -3,6 +3,7 @@
 
 namespace SilverStripe\ORM;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\Queries\SQLSelect;
@@ -184,15 +185,15 @@ class ManyManyThroughQueryManipulator implements DataQueryManipulator
         // Add select fields
         foreach ($joinTableColumns as $joinTableColumn) {
             $sqlSelect->selectField(
-                "\"{$joinTableAlias}\".\"{$joinTableColumn}\"",
-                "{$joinTableAlias}_{$joinTableColumn}"
+                Convert::symbol2sql("{$joinTableAlias}.{$joinTableColumn}"),
+                Convert::symbol2sql("{$joinTableAlias}_{$joinTableColumn}")
             );
         }
 
         // Apply join and record sql for later insertion (at end of replacements)
         $sqlSelect->addInnerJoin(
             '(SELECT $$_SUBQUERY_$$)',
-            "\"{$joinTableAlias}\".\"{$localKey}\" = {$childField}",
+            sprintf('%s = %s', Convert::symbol2sql("{$joinTableAlias}.{$localKey}"), Convert::symbol2sql($childField)),
             $joinTableAlias,
             20,
             $joinTableParameters
