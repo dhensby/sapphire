@@ -122,7 +122,7 @@ class CheckboxSetFieldTest extends SapphireTest
                 ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags'))
                 ->where(
                     $qb->expr()->eq(
-                        Convert::symbol2sql("CheckboxSetFieldTest_Article_Tags"."CheckboxSetFieldTest_ArticleID"),
+                        Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags.CheckboxSetFieldTest_ArticleID'),
                         $qb->createPositionalParameter($article->ID)
                     )
                 )->execute()->fetchColumn(),
@@ -149,24 +149,30 @@ class CheckboxSetFieldTest extends SapphireTest
         /* Saving should work */
         $field->saveInto($article);
 
+        $qb = DB::get_conn()->createQueryBuilder();
         $this->assertEquals(
-            array($tag1->ID,$tag2->ID),
-            DB::prepared_query(
-                "SELECT \"CheckboxSetFieldTest_TagID\"
-				FROM \"CheckboxSetFieldTest_Article_Tags\"
-				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_ArticleID\" = ?",
-                array($article->ID)
-            )->column(),
+            array($tag1->ID, $tag2->ID),
+            $qb->select(Convert::symbol2sql('CheckboxSetFieldTest_TagID'))
+                ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags'))
+                ->where(
+                    $qb->expr()->eq(
+                        Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags.CheckboxSetFieldTest_ArticleID'),
+                        $qb->createPositionalParameter($article->ID)
+                    )
+                )->execute()->fetchAll(\PDO::FETCH_COLUMN),
             'Data shold be saved into CheckboxSetField manymany relation table on the "right end"'
         );
+        $qb = DB::get_conn()->createQueryBuilder();
         $this->assertEquals(
-            array($articleWithTags->ID,$article->ID),
-            DB::query(
-                "SELECT \"CheckboxSetFieldTest_ArticleID\"
-				FROM \"CheckboxSetFieldTest_Article_Tags\"
-				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_TagID\" = $tag1->ID
-			"
-            )->column(),
+            array($articleWithTags->ID, $article->ID),
+            $qb->select(Convert::symbol2sql('CheckboxSetFieldTest_ArticleID'))
+               ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags'))
+               ->where(
+                   $qb->expr()->eq(
+                       Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags.CheckboxSetFieldTest_TagID'),
+                       $qb->createPositionalParameter($tag1->ID)
+                   )
+               )->execute()->fetchAll(\PDO::FETCH_COLUMN),
             'Data shold be saved into CheckboxSetField manymany relation table on the "left end"'
         );
     }
@@ -217,12 +223,17 @@ class CheckboxSetFieldTest extends SapphireTest
         $field->saveInto($article);
         $article->write();
 
-        $dbValue = DB::query(
-            sprintf(
-                'SELECT "Content" FROM "CheckboxSetFieldTest_Article" WHERE "ID" = %s',
-                $article->ID
-            )
-        )->value();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('Content'))
+            ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article'))
+            ->where(
+                $qb->expr()->eq(
+                    Convert::symbol2sql('ID'),
+                    $qb->createPositionalParameter($article->ID)
+                )
+            );
+
+        $dbValue = $qb->execute()->fetchColumn();
 
         // JSON encoded values
         $this->assertEquals('["Test","Another"]', $dbValue);

@@ -526,7 +526,7 @@ class DataQuery
      */
     public function aggregate($expression)
     {
-        return $this->getFinalisedQuery()->aggregate($expression)->execute()->value();
+        return $this->getFinalisedQuery()->aggregate($expression)->execute()->fetchColumn();
     }
 
     /**
