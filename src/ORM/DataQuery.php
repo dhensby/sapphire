@@ -339,7 +339,7 @@ class DataQuery
 
         $obj = Injector::inst()->get($this->dataClass);
         // @todo fix versioned
-        //$obj->extend('augmentSQL', $query, $this);
+        $obj->extend('augmentSQL', $query, $this);
 
         $this->ensureSelectContainsOrderbyColumns($query);
 
@@ -404,12 +404,12 @@ class DataQuery
                         $query->selectField($qualCol);
                     }
                 } else {
-                    $qualCol = '"' . implode('"."', $parts) . '"';
+                    $qualCol = Convert::symbol2sql(implode('.', $parts));
 
                     if (!in_array($qualCol, $query->getSelect())) {
                         unset($newOrderby[$k]);
 
-                        $newOrderby["\"_SortColumn$i\""] = $dir;
+                        $newOrderby[Convert::symbol2sql("_SortColumn$i")] = $dir;
                         $query->selectField($qualCol, "_SortColumn$i");
 
                         $i++;
@@ -465,9 +465,13 @@ class DataQuery
     {
         $table = DataObject::getSchema()->tableForField($this->dataClass, $field);
         if (!$table) {
-            return $this->aggregate("MAX(\"$field\")");
+            return $this->aggregate(
+                DB::get_conn()->getDatabasePlatform()->getMaxExpression(Convert::symbol2sql($field))
+            );
         }
-        return $this->aggregate("MAX(\"$table\".\"$field\")");
+        return $this->aggregate(
+            DB::get_conn()->getDatabasePlatform()->getMaxExpression(Convert::symbol2sql("$table.$field"))
+        );
     }
 
     /**

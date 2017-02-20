@@ -261,13 +261,14 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
 
 
         // Raw SQL for efficiency
-        $permission = DB::get_conn()->executeQuery($qb->getSQL(), array_merge(
-                $codeParams,
-                $adminParams,
-                array(self::GRANT_PERMISSION),
-                $groupParams,
-                $argParams
-            ))->fetchColumn();
+        $qb->setParameters(array_merge(
+            $codeParams,
+            $adminParams,
+            array(self::GRANT_PERMISSION),
+            $groupParams,
+            $argParams
+        ));
+        $permission = $qb->execute()->fetchColumn();
 
         if ($permission) {
             return $permission;
@@ -281,9 +282,7 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
             $qb->where($qb->expr()->in(Convert::symbol2sql('Code'), $qb->createPositionalParameter($codeParams, Connection::PARAM_STR_ARRAY)));
             $qb->andWhere($qb->expr()->eq(Convert::symbol2sql('Type'), $qb->createPositionalParameter(self::GRANT_PERMISSION)));
 
-            $hasPermission = DB::get_conn()->executeQuery($qb->getSQL(), $qb->getParameters(), $qb->getParameterTypes())
-                ->fetchColumn();
-
+            $hasPermission = $qb->execute()->fetchColumn();
 
             if (!$hasPermission) {
                 return false;

@@ -9,6 +9,7 @@ use BadMethodCallException;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Manifest\ClassLoader;
@@ -358,22 +359,30 @@ class DatabaseAdmin extends Controller
                     }
                     $table = $schema->baseDataTable($baseDataClass);
 
-                    // @todo use QueryBuilder
-                    $updateQuery = "UPDATE \"$table%s\" SET \"ClassName\" = ? WHERE \"ClassName\" = ?";
-                    $updateQueries = [sprintf($updateQuery, '')];
+                    $tableName = "{$table}%s";
+                    $qb = DB::get_conn()->createQueryBuilder();
+                    $qb->set(
+                        Convert::symbol2sql('ClassName'),
+                        $qb->createPositionalParameter(null)
+                    );
+                    $qb->where(
+                        $qb->expr()->eq(Convert::symbol2sql('ClassName'), $qb->createPositionalParameter(null))
+                    );
+                    $tableNames = [sprintf($tableName, '')];
 
                     // Remap versioned table ClassName values as well
                     $class = DataObject::singleton($newClassName);
                     // @todo - versioned
-                    if (false && $class->has_extension(Versioned::class)) {
+                    if ($class->has_extension(Versioned::class)) {
                         if ($class->hasStages()) {
-                            $updateQueries[] = sprintf($updateQuery, '_Live');
+                            $tableNames[] = sprintf($tableName, '_Live');
                         }
-                        $updateQueries[] = sprintf($updateQuery, '_Versions');
+                        $tableNames[] = sprintf($tableName, '_Versions');
                     }
 
-                    foreach ($updateQueries as $query) {
-                        $conn->executeUpdate($query, [$newClassName, $oldClassName]);
+                    foreach ($tableNames as $table) {
+                        $qb->update(Convert::symbol2sql($table));
+                        $qb->execute();
                     }
                 }
             }

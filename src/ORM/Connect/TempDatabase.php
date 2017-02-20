@@ -106,7 +106,10 @@ class TempDatabase
             return;
         }
 
-        $this->getConn()->clearAllData();
+        $conn = $this->getConn();
+        foreach ($conn->getSchemaManager()->listTableNames() as $table) {
+            $conn->executeQuery($conn->getDatabasePlatform()->getTruncateTableSQL($table));
+        }
 
         // Some DataExtensions keep a static cache of information that needs to
         // be reset whenever the database is cleaned out
