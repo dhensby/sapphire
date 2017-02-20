@@ -28,6 +28,13 @@ class DBTime extends DBField
      */
     const ISO_TIME = 'HH:mm:ss';
 
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'notnull' => false,
+        ];
+    }
+
     public function setValue($value, $record = null, $markChanged = true)
     {
         $value = $this->parseTime($value);

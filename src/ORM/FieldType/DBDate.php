@@ -35,6 +35,13 @@ class DBDate extends DBField
      */
     const ISO_DATE = 'y-MM-dd';
 
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'notnull' => false,
+        ];
+    }
+
     public function setValue($value, $record = null, $markChanged = true)
     {
         $value = $this->parseDate($value);
