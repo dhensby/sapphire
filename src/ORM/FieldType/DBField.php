@@ -605,6 +605,7 @@ abstract class DBField extends ViewableData implements DBIndexable
     {
         return [
             'default' => $this->getDefaultValue(),
+            'notnull' => false,
         ];
     }
 

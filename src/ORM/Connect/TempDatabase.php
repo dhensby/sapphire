@@ -4,6 +4,7 @@ namespace SilverStripe\ORM\Connect;
 
 use Exception;
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
@@ -144,7 +145,7 @@ class TempDatabase
 
         $dbConn->getSchemaManager()->createDatabase($dbname);
 
-        $dbConn->executeQuery(sprintf('USE %s', Convert::symbol2sql($dbname)));
+        $dbConn->query(sprintf('USE %s', Convert::symbol2sql($dbname)));
 
         $this->resetDBSchema();
 
