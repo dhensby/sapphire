@@ -885,7 +885,10 @@ class DataList extends ViewableData implements SS_List, Filterable, Sortable, Li
      */
     public function first()
     {
-        foreach ($this->dataQuery->firstRow()->execute() as $row) {
+        foreach ($this
+                     ->dataQuery
+                     ->firstRow()
+                     ->execute() as $row) {
             return $this->createDataObject($row);
         }
         return null;

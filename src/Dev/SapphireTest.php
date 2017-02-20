@@ -1100,7 +1100,10 @@ class SapphireTest extends PHPUnit_Framework_TestCase
     public static function empty_temp_db()
     {
         if (self::using_temp_db()) {
-            DB::get_conn()->clearAllData();
+            $conn = DB::get_conn();
+            foreach ($conn->getSchemaManager()->listTableNames() as $table) {
+                $conn->executeQuery($conn->getDatabasePlatform()->getTruncateTableSQL($table));
+            }
 
             // Some DataExtensions keep a static cache of information that needs to
             // be reset whenever the database is cleaned out

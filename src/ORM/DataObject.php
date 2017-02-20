@@ -1296,7 +1296,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
         // Allow extensions to extend this manipulation
         // @todo get versioned working
-        //$this->extend('augmentWrite', $manipulation);
+        $this->extend('augmentWrite', $manipulation);
 
         // New records have their insert into the base data table done first, so that they can pass the
         // generated ID on to the rest of the manipulation
@@ -3147,7 +3147,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
         // Let any extentions make their own database fields
         // @todo get versioned working
-//        $this->extend('augmentDatabase', $dbSchema);
+        $this->extend('augmentDatabase', $dbSchema);
     }
 
     /**

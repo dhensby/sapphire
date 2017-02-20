@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Security;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\ManyManyList;
@@ -40,8 +41,15 @@ class Member_GroupSet extends ManyManyList
 
         // Find directly applied groups
         $manyManyFilter = parent::foreignIDFilter($id);
-        $query = new SQLSelect('"Group_Members"."GroupID"', '"Group_Members"', $manyManyFilter);
-        $groupIDs = $query->execute()->column();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('GroupID'));
+        $qb->from(Convert::symbol2sql('Group_Members'));
+        $where = $qb->expr()->andX();
+        foreach ($manyManyFilter as $clause => $value) {
+            $where->add($qb->expr()->eq($clause, $qb->createNamedParameter($value)));
+        }
+        $qb->where($where);
+        $groupIDs = $qb->execute()->fetchAll(\PDO::FETCH_ASSOC);
 
         // Get all ancestors, iteratively merging these into the master set
         $allGroupIDs = array();
@@ -54,9 +62,11 @@ class Member_GroupSet extends ManyManyList
         // Add a filter to this DataList
         if (!empty($allGroupIDs)) {
             $allGroupIDsPlaceholders = DB::placeholders($allGroupIDs);
-            return array("\"Group\".\"ID\" IN ($allGroupIDsPlaceholders)" => $allGroupIDs);
+            return array(
+                $qb->expr()->in(Convert::symbol2sql("Group.ID"), $allGroupIDsPlaceholders) => $allGroupIDs,
+            );
         } else {
-            return array('"Group"."ID"' => 0);
+            return array(Convert::symbol2sql('Group.ID') => 0);
         }
     }
 
