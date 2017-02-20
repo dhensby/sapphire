@@ -422,7 +422,14 @@ class DB
 
                         // Set best condition to use
                         if (!empty($writeInfo['where'])) {
-                            // @todo this
+                            foreach ($writeInfo['where'] as $field => $value) {
+                                $qb->addWhere(
+                                    $qb->expr()->eq(
+                                        Convert::symbol2sql($field),
+                                        $qb->createPositionalParameter($value)
+                                    )
+                                );
+                            }
                             throw new \Exception('need to integrate this');
                         } elseif (!empty($writeInfo['id'])) {
                             $qb->where(sprintf(
@@ -454,7 +461,7 @@ class DB
                         $qb->insert(Convert::symbol2sql($table));
 
                         foreach ($writeInfo['fields'] as $fieldName => $fieldValue) {
-                            $qb->set(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
+                            $qb->setValue(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
                         }
 
                         $qb->execute();

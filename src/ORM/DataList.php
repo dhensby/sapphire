@@ -429,7 +429,6 @@ class DataList extends ViewableData implements SS_List, Filterable, Sortable, Li
     public function addFilter($filterArray)
     {
         $list = $this;
-
         foreach ($filterArray as $expression => $value) {
             $filter = $this->createSearchFilter($expression, $value);
             $list = $list->alterDataQuery(array($filter, 'apply'));

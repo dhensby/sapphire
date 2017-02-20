@@ -343,7 +343,7 @@ abstract class SearchFilter
 
         return $query
             ->having($having)
-            ->groupby("\"{$baseTable}\".\"ID\"");
+            ->groupby(Convert::symbol2sql("{$baseTable}.ID"));
     }
 
     /**

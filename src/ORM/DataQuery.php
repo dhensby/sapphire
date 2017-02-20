@@ -1146,7 +1146,7 @@ class DataQuery
         $query->selectField($fieldExpression, $field);
         $this->ensureSelectContainsOrderbyColumns($query, $originalSelect);
 
-        return $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+        return $query->execute()->fetchAll(\PDO::FETCH_COLUMN);
     }
 
     /**

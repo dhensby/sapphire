@@ -5,6 +5,7 @@ namespace SilverStripe\ORM;
 use BadMethodCallException;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\ORM\Queries\SQLDelete;
 use SilverStripe\ORM\FieldType\DBComposite;
@@ -271,8 +272,8 @@ class ManyManyList extends RelationList
             );
             if ($hasExisting) {
                 $manipulation[$this->joinTable]['where'] = array(
-                    Convert::symbol2sql("{$this->joinTable}.{$this->foreignKey}") => $foreignID,
-                    Convert::symbol2sql("{$this->joinTable}.{$this->localKey}") => $itemID
+                    "{$this->joinTable}.{$this->foreignKey}" => $foreignID,
+                    "{$this->joinTable}.{$this->localKey}" => $itemID
                 );
             }
 
@@ -282,6 +283,7 @@ class ManyManyList extends RelationList
                 foreach ($this->extraFields as $fieldName => $fieldSpec) {
                     // Skip fields without an assignment
                     if (array_key_exists($fieldName, $extraFields)) {
+                        /** @var DBField $fieldObject */
                         $fieldObject = Injector::inst()->create($fieldSpec, $fieldName);
                         $fieldObject->setValue($extraFields[$fieldName]);
                         $fieldObject->writeToManipulation($manipulation[$this->joinTable]);

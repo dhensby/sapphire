@@ -49,7 +49,7 @@ class Member_GroupSet extends ManyManyList
             $where->add($qb->expr()->eq($clause, $qb->createNamedParameter($value)));
         }
         $qb->where($where);
-        $groupIDs = $qb->execute()->fetchAll(\PDO::FETCH_ASSOC);
+        $groupIDs = $qb->execute()->fetchAll(\PDO::FETCH_COLUMN);
 
         // Get all ancestors, iteratively merging these into the master set
         $allGroupIDs = array();

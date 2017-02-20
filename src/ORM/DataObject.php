@@ -1272,7 +1272,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
         $qb = DB::get_conn()->createQueryBuilder();
         $qb->insert(Convert::symbol2sql($baseTable))
-            ->set(Convert::symbol2sql('Created'), $qb->createPositionalParameter($now))
+            ->setValue(Convert::symbol2sql('Created'), $qb->createPositionalParameter($now))
             ->execute();
 
         $this->changed['ID'] = self::CHANGE_VALUE;
