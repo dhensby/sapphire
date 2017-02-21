@@ -51,7 +51,7 @@ class ExactMatchFilter extends SearchFilter
      */
     protected function oneFilter(DataQuery $query, $inclusive)
     {
-        $expressionBuilder = DB::get_conn()->getExpressionBuilder();
+        $eb = DB::get_conn()->getExpressionBuilder();
         $this->model = $query->applyRelation($this->relation);
         $field = $this->getDbName();
         $value = $this->getValue();
@@ -59,23 +59,25 @@ class ExactMatchFilter extends SearchFilter
         // Null comparison check
         if ($value === null) {
             $where = $inclusive
-                ? DB::get_conn()->getDatabasePlatform()->getIsNullExpression($field)
-                : DB::get_conn()->getDatabasePlatform()->getIsNotNullExpression($field);
+                ? $eb->isNull($field)
+                : $eb->isNotNull($field);
             return $query->where($where);
         }
 
         if ($this->getCaseSensitive() === null) {
-            $where = $inclusive ? $expressionBuilder->eq($field, '?') : $expressionBuilder->neq($field, '?');
+            $where = $inclusive ? $eb->eq($field, '?') : $eb->neq($field, '?');
         } else {
             $where = $inclusive
-                ? $expressionBuilder->comparison($field, $this->getCaseSensitive() ? 'LIKE BINARY' : 'LIKE', '?')
-                : $expressionBuilder->comparison($field, $this->getCaseSensitive() ? 'NOT LIKE BINARY' : 'NOT LIKE', '?');
+                ? $eb->comparison($field, $this->getCaseSensitive() ? 'LIKE BINARY' : 'LIKE', '?')
+                : $eb->comparison($field, $this->getCaseSensitive() ? 'NOT LIKE BINARY' : 'NOT LIKE', '?');
         }
 
         // for != clauses include IS NULL values, since they would otherwise be excluded
         if (!$inclusive) {
-            $nullClause = DB::get_conn()->getDatabasePlatform()->getIsNullExpression($field);
-            $where .= " OR {$nullClause}";
+            $where = (string)$eb->orX(
+                $where,
+                $eb->isNull($field)
+            );
         }
 
         $clause = [$where => $value];
@@ -149,13 +151,11 @@ class ExactMatchFilter extends SearchFilter
             }
         } else {
             // Generate reusable comparison clause
-            $comparisonClause = DB::get_conn()->comparisonClause(
+            $comparisonClause = $this->generateComparisonClause(
                 $this->getDbName(),
-                null,
                 true, // exact?
                 !$inclusive, // negate?
-                $this->getCaseSensitive(),
-                true
+                $this->getCaseSensitive()
             );
             $count = count($values);
             if ($count > 1) {
@@ -175,7 +175,9 @@ class ExactMatchFilter extends SearchFilter
             // Otherwise we are excluding values that do include null, so `AND IS NOT NULL`.
             // Simplified from (!$inclusive && !$hasNull) || ($inclusive && $hasNull);
             $isNull = !$hasNull || $inclusive;
-            $nullCondition = DB::get_conn()->nullCheckClause($field, $isNull);
+            $nullCondition = $isNull
+                ? DB::get_conn()->getExpressionBuilder()->isNull($field)
+                : DB::get_conn()->getExpressionBuilder()->isNotNull($field);
 
             // Determine merge strategy
             if (empty($predicate)) {

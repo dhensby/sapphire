@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DataQuery;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
@@ -43,8 +44,8 @@ class DataQueryTest extends SapphireTest
         $query = new DataQuery(DataQueryTest\ObjectB::class);
         $result = $query->leftJoin(
             'DataQueryTest_C',
-            "\"DataQueryTest_B\".\"TestCID\" = \"DataQueryTest_B\".\"ID\""
-        )->sort('"DataQueryTest_B"."Title"', 'ASC');
+            sprintf('%s = %s', Convert::symbol2sql('DataQueryTest_B.TestCID', Convert::symbol2sql('DataQueryTest_B.ID')))
+        )->sort('DataQueryTest_B.Title', 'ASC');
 
         $result = $result->execute()->record();
         $this->assertEquals('Foo', $result['Title']);
@@ -280,6 +281,12 @@ class DataQueryTest extends SapphireTest
 
     public function testComparisonClauseInt()
     {
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('SortOder') => 2,
+        ))->execute();
         DB::query("INSERT INTO \"DataQueryTest_F\" (\"SortOrder\") VALUES (2)");
         $query = new DataQuery(DataQueryTest\ObjectF::class);
         $query->where(DB::get_conn()->comparisonClause('"SortOrder"', '2'));

@@ -408,6 +408,10 @@ class DB
         static::get_conn()->transactional(function ($conn) use ($manipulation) {
             /** @var \Doctrine\DBAL\Connection $conn */
             foreach ($manipulation as $table => $writeInfo) {
+                if (empty($writeInfo['fields'])) {
+                    continue;
+                }
+
                 switch ($writeInfo['command']) {
                     case 'update':
                         $qb = $conn->createQueryBuilder();
@@ -421,29 +425,29 @@ class DB
                             $qb->set(Convert::symbol2sql($fieldName), $qb->createPositionalParameter($fieldValue));
                         }
 
+                        $where = $qb->expr()->andX();
                         // Set best condition to use
                         if (!empty($writeInfo['where'])) {
                             foreach ($writeInfo['where'] as $field => $value) {
-                                $qb->addWhere(
+                                $selectQB->createPositionalParameter($value);
+                                $where->add(
                                     $qb->expr()->eq(
                                         Convert::symbol2sql($field),
                                         $qb->createPositionalParameter($value)
                                     )
                                 );
                             }
-                            throw new \Exception('need to integrate this');
                         } elseif (!empty($writeInfo['id'])) {
-                            $qb->where(sprintf(
+                            $selectQB->createPositionalParameter($writeInfo['id']);
+                            $where->add(sprintf(
                                 '%s = %s',
                                 Convert::symbol2sql('ID'),
-                                $qb->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT)
-                            ));
-                            $selectQB->where(sprintf(
-                                '%s = %s',
-                                Convert::symbol2sql('ID'),
-                                $selectQB->createPositionalParameter($writeInfo['id'], \PDO::PARAM_INT)
+                                $qb->createPositionalParameter($writeInfo['id'])
                             ));
                         }
+
+                        $qb->where($where);
+                        $selectQB->where($where);
 
                         // Test to see if this update query shouldn't, in fact, be an insert
                         if ($selectQB->execute()->fetchColumn() > 0) {

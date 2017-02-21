@@ -4,6 +4,7 @@ namespace SilverStripe\ORM\Hierarchy;
 
 use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Control\Controller;
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\SS_List;
 use SilverStripe\ORM\ValidationResult;
@@ -244,7 +245,7 @@ class Hierarchy extends DataExtension
         return Versioned::get_including_deleted(
             $this->owner->baseClass(),
             [ $parentIDColumn => $this->owner->ID ],
-            "\"{$baseTable}\".\"ID\" ASC"
+            sprintf('%s ASC', Convert::symbol2sql("{$baseTable}.ID"))
         );
     }
 

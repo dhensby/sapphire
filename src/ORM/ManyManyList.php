@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM;
 
 use BadMethodCallException;
+use Doctrine\DBAL\Connection;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;
@@ -329,18 +330,25 @@ class ManyManyList extends RelationList
             throw new InvalidArgumentException("ManyManyList::removeById() expecting an ID");
         }
 
-        $query = new SQLDelete("\"{$this->joinTable}\"");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->delete($this->joinTable);
 
         if ($filter = $this->foreignIDWriteFilter($this->getForeignID())) {
-            $query->setWhere($filter);
+            foreach ($filter as $clause => $value) {
+                $qb->where($clause, $qb->createPositionalParameter($value, is_array($value) ? Connection::PARAM_STR_ARRAY : \PDO::PARAM_STR));
+            }
         } else {
             user_error("Can't call ManyManyList::remove() until a foreign ID is set");
         }
 
-        $query->addWhere(array(
-            "\"{$this->joinTable}\".\"{$this->localKey}\"" => $itemID
-        ));
-        $query->execute();
+        $qb->andWhere(
+            $qb->expr()->eq(
+                Convert::symbol2sql("{$this->joinTable}.{$this->localKey}"),
+                $qb->createPositionalParameter($itemID)
+            )
+        );
+
+        $qb->execute();
     }
 
     /**

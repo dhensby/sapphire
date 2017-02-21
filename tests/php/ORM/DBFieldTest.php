@@ -5,7 +5,6 @@ namespace SilverStripe\ORM\Tests;
 use SilverStripe\ORM\FieldType\DBBigInt;
 use SilverStripe\ORM\FieldType\DBBoolean;
 use SilverStripe\ORM\FieldType\DBDecimal;
-use SilverStripe\ORM\FieldType\DBDouble;
 use SilverStripe\ORM\FieldType\DBFloat;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\FieldType\DBString;
@@ -27,7 +26,6 @@ class DBFieldTest extends SapphireTest
     {
         /* Float and Double use 0 for "null" value representation */
         $this->assertEquals(0, singleton('Float')->nullValue());
-        $this->assertEquals(0, singleton('Double')->nullValue());
     }
 
     /**
@@ -42,14 +40,6 @@ class DBFieldTest extends SapphireTest
         $this->assertEquals(0, $float->prepValueForDB(false));
         $this->assertEquals(0, $float->prepValueForDB(''));
         $this->assertEquals('0', $float->prepValueForDB('0'));
-
-        /* Double behaviour, asserting we have 0 */
-        $double = DBDouble::create();
-        $this->assertEquals(0, $double->prepValueForDB(0));
-        $this->assertEquals(0, $double->prepValueForDB(null));
-        $this->assertEquals(0, $double->prepValueForDB(false));
-        $this->assertEquals(0, $double->prepValueForDB(''));
-        $this->assertEquals('0', $double->prepValueForDB('0'));
 
         /* Integer behaviour, asserting we have 0 */
         $int = singleton('Int');

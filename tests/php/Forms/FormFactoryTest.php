@@ -53,7 +53,9 @@ class FormFactoryTest extends SapphireTest
 
 
         // Check preview link
-        /** @var LiteralField $previewLink */
+        /**
+  @var LiteralField $previewLink
+*/
         $previewLink = $form->Fields()->fieldByName('PreviewLink');
         $this->assertInstanceOf(LiteralField::class, $previewLink);
         $this->assertEquals(

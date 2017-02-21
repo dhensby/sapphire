@@ -5,6 +5,7 @@ namespace SilverStripe\ORM\FieldType;
 use Doctrine\DBAL\Types\Type;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 
@@ -144,8 +145,12 @@ class DBClassName extends DBEnum
 
         // Get all class names
         $classNames = $this->getEnum();
-        if (DB::get_schema()->hasField($table, $name)) {
-            $existing = DB::query("SELECT DISTINCT \"{$name}\" FROM \"{$table}\"")->column();
+        if (in_array($name, DB::get_conn()->getSchemaManager()->listTableColumns($table))) {
+            $existing = DB::get_conn()->createQueryBuilder()
+                ->select(Convert::symbol2sql($name))
+                ->from(Convert::symbol2sql($table))
+                ->groupBy(Convert::symbol2sql($name))
+                ->execute()->fetchAll(\PDO::FETCH_COLUMN);
             $classNames = array_unique(array_merge($classNames, $existing));
         }
 

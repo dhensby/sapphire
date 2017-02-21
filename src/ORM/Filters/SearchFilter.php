@@ -98,6 +98,44 @@ abstract class SearchFilter
         $this->setModifiers($modifiers);
     }
 
+    public function generateComparisonClause(
+        $field,
+        $exact = false,
+        $negate = false,
+        $caseSensitive = null
+    )
+    {
+        $quotedField = $field;
+        $eb = DB::get_conn()->getExpressionBuilder();
+        if ($exact && $caseSensitive === null) {
+            if ($negate) {
+                return $eb->neq(
+                    $quotedField,
+                    '?'
+                );
+            } else {
+                return $eb->eq(
+                    $quotedField,
+                    '?'
+                );
+            }
+        } else {
+            if ($negate) {
+                if ($caseSensitive) {
+                    return $eb->notLike($quotedField, '?');
+                } else {
+                    return $eb->notLike($field, 'BINARY ?');
+                }
+            } else {
+                if ($caseSensitive) {
+                    return $eb->like($quotedField, '?');
+                } else {
+                    return $eb->like($quotedField, ' BINARY ?');
+                }
+            }
+        }
+    }
+
     /**
      * Called by constructor to convert a string pathname into
      * a well defined relationship sequence.
