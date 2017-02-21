@@ -209,12 +209,14 @@ class Convert
      * @param string $separator The string that delimits subsequent identifiers
      * @return string The escaped identifier. E.g. '"SiteTree"."Title"'
      */
-    public static function symbol2sql($identifier, $separator = '.')
+    public static function symbol2sql($identifier)
     {
-        $parts = array_map(function($part) {
-            return DB::get_conn()->quoteIdentifier($part);
-        }, explode($separator, $identifier));
-        return implode($separator, $parts);
+        return DB::get_conn()->quoteIdentifier($identifier);
+    }
+
+    public static function sql2symbol($identifier)
+    {
+        return str_replace(DB::get_conn()->getDatabasePlatform()->getIdentifierQuoteCharacter(), '', $identifier);
     }
 
     /**

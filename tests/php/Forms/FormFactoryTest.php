@@ -52,7 +52,9 @@ class FormFactoryTest extends SapphireTest
         $this->assertInstanceOf(HiddenField::class, $form->Fields()->fieldByName('SecurityID'));
 
         // Check preview link
-        /** @var LiteralField $previewLink */
+        /**
+  @var LiteralField $previewLink
+*/
         $previewLink = $form->Fields()->fieldByName('PreviewLink');
         $this->assertInstanceOf(LiteralField::class, $previewLink);
         $this->assertEquals(

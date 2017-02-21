@@ -180,7 +180,8 @@ class SQLSelect extends SQLConditionalExpression
     public function selectField($field, $alias = null)
     {
         if (!$alias) {
-            if (preg_match('/"([^"]+)"$/', $field, $matches)) {
+            $delimiter = DB::get_conn()->getDatabasePlatform()->getIdentifierQuoteCharacter();
+            if (preg_match("/{$delimiter}([^{$delimiter}]+){$delimiter}$/", $field, $matches)) {
                 $alias = $matches[1];
             } else {
                 $alias = $field;
@@ -363,9 +364,9 @@ class SQLSelect extends SQLConditionalExpression
                     do {
                         $column = "_SortColumn{$i}";
                         ++$i;
-                    } while (array_key_exists('"' . $column . '"', $this->orderby));
+                    } while (array_key_exists($column, $this->orderby));
                     $this->selectField($clause, $column);
-                    $clause = '"' . $column . '"';
+                    $clause = $column;
                 }
                 $orderby[$clause] = $dir;
             }
@@ -404,6 +405,7 @@ class SQLSelect extends SQLConditionalExpression
     public function getOrderBy()
     {
         $orderby = $this->orderby;
+//        var_export(['orderby' => $orderby]);
         if (!$orderby) {
             $orderby = array();
         }

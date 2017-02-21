@@ -49,17 +49,15 @@ class PartialMatchFilter extends SearchFilter
     protected function applyOne(DataQuery $query)
     {
         $this->model = $query->applyRelation($this->relation);
-        $comparisonClause = DB::get_conn()->comparisonClause(
+        $comparisonClause = $this->generateComparisonClause(
             $this->getDbName(),
-            null,
             false, // exact?
             false, // negate?
-            $this->getCaseSensitive(),
-            true
+            $this->getCaseSensitive()
         );
 
         $clause = [$comparisonClause => $this->getMatchPattern($this->getValue())];
-        
+
         return $this->aggregate ?
             $this->applyAggregate($query, $clause) :
             $query->where($clause);
@@ -69,13 +67,11 @@ class PartialMatchFilter extends SearchFilter
     {
         $this->model = $query->applyRelation($this->relation);
         $whereClause = array();
-        $comparisonClause = DB::get_conn()->comparisonClause(
+        $comparisonClause = $this->generateComparisonClause(
             $this->getDbName(),
-            null,
             false, // exact?
             false, // negate?
-            $this->getCaseSensitive(),
-            true
+            $this->getCaseSensitive()
         );
         foreach ($this->getValue() as $value) {
             $whereClause[] = array($comparisonClause => $this->getMatchPattern($value));
@@ -86,13 +82,11 @@ class PartialMatchFilter extends SearchFilter
     protected function excludeOne(DataQuery $query)
     {
         $this->model = $query->applyRelation($this->relation);
-        $comparisonClause = DB::get_conn()->comparisonClause(
+        $comparisonClause = $this->generateComparisonClause(
             $this->getDbName(),
-            null,
             false, // exact?
             true, // negate?
-            $this->getCaseSensitive(),
-            true
+            $this->getCaseSensitive()
         );
         return $query->where(array(
             $comparisonClause => $this->getMatchPattern($this->getValue())
@@ -103,13 +97,11 @@ class PartialMatchFilter extends SearchFilter
     {
         $this->model = $query->applyRelation($this->relation);
         $values = $this->getValue();
-        $comparisonClause = DB::get_conn()->comparisonClause(
+        $comparisonClause = $this->generateComparisonClause(
             $this->getDbName(),
-            null,
             false, // exact?
             true, // negate?
-            $this->getCaseSensitive(),
-            true
+            $this->getCaseSensitive()
         );
         $parameters = array();
         foreach ($values as $value) {

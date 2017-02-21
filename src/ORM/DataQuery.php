@@ -5,7 +5,6 @@ namespace SilverStripe\ORM;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\Connect\Query;
 use SilverStripe\ORM\Queries\SQLConditionGroup;
 use SilverStripe\ORM\Queries\SQLSelect;
 use InvalidArgumentException;
@@ -230,8 +229,9 @@ class DataQuery
             // Ensure that any filtered columns are included in the selected columns
             foreach ($query->getWhereParameterised($parameters) as $where) {
                 // Check for any columns in the form '"Column" = ?' or '"Table"."Column"' = ?
+                $q = DB::get_conn()->getDatabasePlatform()->getIdentifierQuoteCharacter();
                 if (preg_match_all(
-                    '/(?:"(?<table>[^"]+)"\.)?"(?<column>[^"]+)"(?:[^\.]|$)/',
+                    "/(?:{$q}(?<table>[^{$q}]+){$q}\\.)?{$q}(?<column>[^{$q}]+){$q}(?:[^\\.]|$)/",
                     $where,
                     $matches,
                     PREG_SET_ORDER
@@ -288,10 +288,11 @@ class DataQuery
 
         // Resolve colliding fields
         if ($this->collidingFields) {
+            $q = DB::get_conn()->getDatabasePlatform()->getIdentifierQuoteCharacter();
             foreach ($this->collidingFields as $collisionField => $collisions) {
                 $caseClauses = array();
                 foreach ($collisions as $collision) {
-                    if (preg_match('/^"(?<table>[^"]+)"\./', $collision, $matches)) {
+                    if (preg_match("/^{$q}(?<table>[^{$q}]+){$q}\./", $collision, $matches)) {
                         $collisionTable = $matches['table'];
                         $collisionClass = $schema->tableClass($collisionTable);
                         if ($collisionClass) {
@@ -340,7 +341,6 @@ class DataQuery
         $obj = Injector::inst()->get($this->dataClass);
         // @todo fix versioned
         $obj->extend('augmentSQL', $query, $this);
-
         $this->ensureSelectContainsOrderbyColumns($query);
 
         // Apply post-finalisation manipulations
@@ -371,7 +371,7 @@ class DataQuery
                     continue;
                 }
 
-                $col = str_replace('"', '', trim($k));
+                $col = Convert::sql2symbol(trim($k));
                 $parts = explode('.', $col);
 
                 // Pull through SortColumn references from the originalSelect variables
@@ -382,7 +382,6 @@ class DataQuery
 
                     continue;
                 }
-
                 if (count($parts) == 1) {
                     // Get expression for sort value
                     $qualCol = Convert::symbol2sql($parts[0]);

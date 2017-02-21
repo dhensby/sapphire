@@ -94,7 +94,7 @@ class Member extends DataObject
 
     private static $table_name = "Member";
 
-    private static $default_sort = '"Surname", "FirstName"';
+    private static $default_sort = 'Surname, FirstName';
 
     private static $indexes = array(
         'Email' => true,

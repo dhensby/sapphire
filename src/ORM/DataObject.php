@@ -1456,7 +1456,6 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Allow extensions to extend this manipulation
-        // @todo get versioned working
         $this->extend('augmentWrite', $manipulation);
 
         // New records have their insert into the base data table done first, so that they can pass the
@@ -1509,6 +1508,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             // New records have their insert into the base data table done first, so that they can pass the
             // generated primary key on to the rest of the manipulation
             $baseTable = $this->baseTable();
+
             $this->writeBaseRecord($baseTable, $now);
 
             // Write the DB manipulation for all changed fields
@@ -3389,7 +3389,6 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Let any extentions make their own database fields
-        // @todo get versioned working
         $this->extend('augmentDatabase', $dbSchema);
     }
 
