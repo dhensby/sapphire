@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataObject;
@@ -31,7 +32,7 @@ class DataObjectLazyLoadingTest extends SapphireTest
         $expected = 'SELECT DISTINCT "DataObjectTest_Team"."ClassName", "DataObjectTest_Team"."LastEdited", ' .
             '"DataObjectTest_Team"."Created", "DataObjectTest_Team"."ID", CASE WHEN '.
             '"DataObjectTest_Team"."ClassName" IS NOT NULL THEN "DataObjectTest_Team"."ClassName" ELSE ' .
-            $db->quoteString(Team::class).' END AS "RecordClassName", "DataObjectTest_Team"."Title" '.
+            $db->quote(Team::class).' END AS "RecordClassName", "DataObjectTest_Team"."Title" '.
             'FROM "DataObjectTest_Team" ' .
             'LEFT JOIN "DataObjectTest_SubTeam" ON "DataObjectTest_SubTeam"."ID" = "DataObjectTest_Team"."ID" ' .
             'WHERE ("DataObjectTest_Team"."ClassName" IN (?))' .
@@ -48,7 +49,7 @@ class DataObjectLazyLoadingTest extends SapphireTest
             '"DataObjectTest_Team"."Created", "DataObjectTest_Team"."Title", ' .
             '"DataObjectTest_SubTeam"."SubclassDatabaseField", "DataObjectTest_Team"."ID", CASE WHEN ' .
             '"DataObjectTest_Team"."ClassName" IS NOT NULL THEN "DataObjectTest_Team"."ClassName" ELSE ' .
-            $db->quoteString(Team::class).' END AS "RecordClassName" FROM "DataObjectTest_Team" ' .
+            $db->quote(Team::class).' END AS "RecordClassName" FROM "DataObjectTest_Team" ' .
             'LEFT JOIN "DataObjectTest_SubTeam" ON "DataObjectTest_SubTeam"."ID" = "DataObjectTest_Team"."ID" WHERE ' .
             '("DataObjectTest_Team"."ClassName" IN (?)) ' .
             'ORDER BY "DataObjectTest_Team"."Title" ASC';
@@ -63,7 +64,7 @@ class DataObjectLazyLoadingTest extends SapphireTest
         $expected = 'SELECT DISTINCT "DataObjectTest_Team"."ClassName", "DataObjectTest_Team"."LastEdited", ' .
             '"DataObjectTest_Team"."Created", "DataObjectTest_Team"."Title", "DataObjectTest_Team"."ID", ' .
             'CASE WHEN "DataObjectTest_Team"."ClassName" IS NOT NULL THEN "DataObjectTest_Team"."ClassName" ELSE ' .
-            $db->quoteString(Team::class).' END AS "RecordClassName" FROM "DataObjectTest_Team" ' .
+            $db->quote(Team::class).' END AS "RecordClassName" FROM "DataObjectTest_Team" ' .
             'LEFT JOIN "DataObjectTest_SubTeam" ON "DataObjectTest_SubTeam"."ID" = "DataObjectTest_Team"."ID" WHERE ' .
             '("DataObjectTest_Team"."ClassName" IN (?)) ' .
             'ORDER BY "DataObjectTest_Team"."Title" ASC';
@@ -78,7 +79,7 @@ class DataObjectLazyLoadingTest extends SapphireTest
         $expected = 'SELECT DISTINCT "DataObjectTest_Team"."ClassName", "DataObjectTest_Team"."LastEdited", ' .
             '"DataObjectTest_Team"."Created", "DataObjectTest_SubTeam"."SubclassDatabaseField", ' .
             '"DataObjectTest_Team"."ID", CASE WHEN "DataObjectTest_Team"."ClassName" IS NOT NULL THEN ' .
-            '"DataObjectTest_Team"."ClassName" ELSE '.$db->quoteString(Team::class).' END ' .
+            '"DataObjectTest_Team"."ClassName" ELSE '.$db->quote(Team::class).' END ' .
             'AS "RecordClassName", "DataObjectTest_Team"."Title" ' .
             'FROM "DataObjectTest_Team" LEFT JOIN "DataObjectTest_SubTeam" ON "DataObjectTest_SubTeam"."ID" = ' .
             '"DataObjectTest_Team"."ID" WHERE ("DataObjectTest_Team"."ClassName" IN (?)) ' .

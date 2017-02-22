@@ -622,8 +622,8 @@ class SQLSelect extends SQLConditionalExpression
     {
         // we can't clear the select if we're relying on its output by a HAVING clause
         if (!empty($this->having)) {
-            $records = $this->execute();
-            return $records->numRecords();
+            $stmt = $this->execute();
+            return $stmt->rowCount();
         } // Choose a default column
         elseif ($column == null) {
             if ($this->groupby) {

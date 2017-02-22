@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\FieldType\DBMoney;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
@@ -279,23 +280,30 @@ class DBMoneyTest extends SapphireTest
         $obj->MyMoney = $m;
         $obj->write();
 
+        $qb = DB::get_conn()->createQueryBuilder();
         $this->assertEquals(
             'EUR',
-            DB::query(
-                sprintf(
-                    'SELECT "MyMoneyCurrency" FROM "MoneyTest_DataObject" WHERE "ID" = %d',
-                    $obj->ID
-                )
-            )->value()
+            $qb->select(Convert::symbol2sql('MyMoneyCurrency'))
+                ->from(Convert::symbol2sql('MoneyTest_DataObject'))
+                ->where(
+                    $qb->expr()->eq(
+                        Convert::symbol2sql('ID'),
+                        $qb->createPositionalParameter($obj->ID)
+                    )
+            )->execute()->fetchColumn()
         );
+
+        $qb = DB::get_conn()->createQueryBuilder();
         $this->assertEquals(
             '1.23',
-            DB::query(
-                sprintf(
-                    'SELECT "MyMoneyAmount" FROM "MoneyTest_DataObject" WHERE "ID" = %d',
-                    $obj->ID
-                )
-            )->value()
+            $qb->select(Convert::symbol2sql('MyMoneyAmount'))
+                ->from(Convert::symbol2sql('MoneyTest_DataObject'))
+                ->where(
+                    $qb->expr()->eq(
+                        Convert::symbol2sql('ID'),
+                        $qb->createPositionalParameter($obj->ID)
+                    )
+                )->execute()->fetchColumn()
         );
     }
 

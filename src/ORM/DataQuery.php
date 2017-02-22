@@ -464,7 +464,9 @@ class DataQuery
             );
         }
         return $this->aggregate(
-            DB::get_conn()->getDatabasePlatform()->getMaxExpression(Convert::symbol2sql("$table.$field"))
+            DB::get_conn()->getDatabasePlatform()->getMaxExpression(
+                Convert::symbol2sql($field)
+            )
         );
     }
 
@@ -481,7 +483,11 @@ class DataQuery
         if (!$table) {
             return $this->aggregate("MIN(\"$field\")");
         }
-        return $this->aggregate("MIN(\"$table\".\"$field\")");
+        return $this->aggregate(
+            DB::get_conn()->getDatabasePlatform()->getMinExpression(
+                Convert::symbol2sql($field)
+            )
+        );
     }
 
     /**
@@ -497,7 +503,11 @@ class DataQuery
         if (!$table) {
             return $this->aggregate("AVG(\"$field\")");
         }
-        return $this->aggregate("AVG(\"$table\".\"$field\")");
+        return $this->aggregate(
+            DB::get_conn()->getDatabasePlatform()->getAvgExpression(
+                Convert::symbol2sql($field)
+            )
+        );
     }
 
     /**
@@ -513,7 +523,11 @@ class DataQuery
         if (!$table) {
             return $this->aggregate("SUM(\"$field\")");
         }
-        return $this->aggregate("SUM(\"$table\".\"$field\")");
+        return $this->aggregate(
+            DB::get_conn()->getDatabasePlatform()->getSumExpression(
+                Convert::symbol2sql($field)
+            )
+        );
     }
 
     /**
