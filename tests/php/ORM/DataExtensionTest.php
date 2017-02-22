@@ -2,9 +2,11 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use SilverStripe\Core\Convert;
+use SilverStripe\Assets\Tests\FileMigrationHelperTest\Extension;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
 class DataExtensionTest extends SapphireTest
@@ -52,13 +54,13 @@ class DataExtensionTest extends SapphireTest
         $contact = DataObject::get_one(
             DataExtensionTest\TestMember::class,
             array(
-            '"DataExtensionTest_Member"."Website"' => 'http://www.example.com'
+                Convert::symbol2sql('DataExtensionTest_Member.Website') => 'http://www.example.com'
             )
         );
         $object = DataObject::get_one(
             DataExtensionTest\RelatedObject::class,
             array(
-            '"DataExtensionTest_RelatedObject"."ContactID"' => $contactID
+                Convert::symbol2sql('DataExtensionTest_RelatedObject.ContactID') => $contactID
             )
         );
 
@@ -126,7 +128,7 @@ class DataExtensionTest extends SapphireTest
         // Pull the record out of the DB and examine the extended fields
         $player = DataObject::get_one(
             DataExtensionTest\Player::class,
-            [ '"DataExtensionTest_Player"."Name"' => 'Joe' ]
+            [ Convert::symbol2sql('DataExtensionTest_Player.Name') => 'Joe' ]
         );
         $this->assertEquals('1990-05-10', $player->DateBirth);
         $this->assertEquals('123 somewhere street', $player->Address);

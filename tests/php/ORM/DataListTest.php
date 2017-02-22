@@ -189,7 +189,7 @@ class DataListTest extends SapphireTest
             . '"DataObjectTest_TeamComment"."TeamID", "DataObjectTest_TeamComment"."ID", '
             . 'CASE WHEN "DataObjectTest_TeamComment"."ClassName" IS NOT NULL '
             . 'THEN "DataObjectTest_TeamComment"."ClassName" ELSE '
-            . $db->quoteString(DataObjectTest\TeamComment::class)
+            . $db->quote(DataObjectTest\TeamComment::class)
             . ' END AS "RecordClassName" FROM "DataObjectTest_TeamComment"'
             . ' ORDER BY "DataObjectTest_TeamComment"."Name" ASC';
         $this->assertSQLEquals($expected, $list->sql($parameters));
@@ -212,7 +212,7 @@ class DataListTest extends SapphireTest
             . '"DataObjectTest_TeamComment"."TeamID", "DataObjectTest_TeamComment"."ID", '
             . 'CASE WHEN "DataObjectTest_TeamComment"."ClassName" IS NOT NULL'
             . ' THEN "DataObjectTest_TeamComment"."ClassName" ELSE '
-            . $db->quoteString(DataObjectTest\TeamComment::class)
+            . $db->quote(DataObjectTest\TeamComment::class)
             . ' END AS "RecordClassName" FROM "DataObjectTest_TeamComment" INNER JOIN '
             . '"DataObjectTest_Team" AS "Team" ON "DataObjectTest_Team"."ID" = '
             . '"DataObjectTest_TeamComment"."TeamID"'
@@ -243,7 +243,7 @@ class DataListTest extends SapphireTest
             . '"DataObjectTest_TeamComment"."TeamID", "DataObjectTest_TeamComment"."ID", '
             . 'CASE WHEN "DataObjectTest_TeamComment"."ClassName" IS NOT NULL'
             . ' THEN "DataObjectTest_TeamComment"."ClassName" ELSE '
-            . $db->quoteString(DataObjectTest\TeamComment::class)
+            . $db->quote(DataObjectTest\TeamComment::class)
             . ' END AS "RecordClassName" FROM "DataObjectTest_TeamComment" INNER JOIN '
             . '"DataObjectTest_Team" AS "Team" ON "DataObjectTest_Team"."ID" = '
             . '"DataObjectTest_TeamComment"."TeamID" '
@@ -271,7 +271,7 @@ class DataListTest extends SapphireTest
             . '"DataObjectTest_TeamComment"."TeamID", "DataObjectTest_TeamComment"."ID", '
             . 'CASE WHEN "DataObjectTest_TeamComment"."ClassName" IS NOT NULL '
             . 'THEN "DataObjectTest_TeamComment"."ClassName" ELSE '
-            . $db->quoteString(DataObjectTest\TeamComment::class)
+            . $db->quote(DataObjectTest\TeamComment::class)
             . ' END AS "RecordClassName" FROM "DataObjectTest_TeamComment" LEFT JOIN "DataObjectTest_Team" '
             . 'AS "Team" ON "DataObjectTest_Team"."ID" = "DataObjectTest_TeamComment"."TeamID"'
             . ' ORDER BY "DataObjectTest_TeamComment"."Name" ASC';
@@ -301,7 +301,7 @@ class DataListTest extends SapphireTest
             . '"DataObjectTest_TeamComment"."TeamID", "DataObjectTest_TeamComment"."ID", '
             . 'CASE WHEN "DataObjectTest_TeamComment"."ClassName" IS NOT NULL'
             . ' THEN "DataObjectTest_TeamComment"."ClassName" ELSE '
-            . $db->quoteString(DataObjectTest\TeamComment::class)
+            . $db->quote(DataObjectTest\TeamComment::class)
             . ' END AS "RecordClassName" FROM "DataObjectTest_TeamComment" LEFT JOIN '
             . '"DataObjectTest_Team" AS "Team" ON "DataObjectTest_Team"."ID" = '
             . '"DataObjectTest_TeamComment"."TeamID" '
@@ -406,11 +406,11 @@ class DataListTest extends SapphireTest
         $list = TeamComment::get();
 
         // where() returns a new DataList, like all the other modifiers, so it can be chained.
-        $list2 = $list->where('"Name" = \'Joe\'');
+        $list2 = $list->where(sprintf('%s = %s', Convert::symbol2sql("Name"), Convert::raw2sql('Joe')));
         $this->assertEquals(array('This is a team comment by Joe'), $list2->column('Comment'));
 
         // The where() clauses are chained together with AND
-        $list3 = $list2->where('"Name" = \'Bob\'');
+        $list3 = $list2->where(sprintf('%s = %s', Convert::symbol2sql("Name"), Convert::raw2sql('Bob')));
         $this->assertEquals(array(), $list3->column('Comment'));
     }
 
@@ -1038,7 +1038,7 @@ class DataListTest extends SapphireTest
         $list = TeamComment::get()
             ->leftJoin(
                 'DataObjectTest_Team',
-                '"DataObjectTest_Team"."ID" = "DataObjectTest_TeamComment"."TeamID"'
+                sprintf('%s = %s', Convert::symbol2sql('DataObjectTest_Team.ID'), Convert::symbol2sql('DataObjectTest_TeamComment.TeamID'))
             )->filter(
                 array(
                 'Title' => 'Team 1'
@@ -1103,18 +1103,26 @@ class DataListTest extends SapphireTest
         $list = Fan::get();
         // Force DataObjectTest_Fan/fan5::Email to empty string
         $fan5id = $this->idFromFixture(Fan::class, 'fan5');
-        DB::prepared_query("UPDATE \"DataObjectTest_Fan\" SET \"Email\" = '' WHERE \"ID\" = ?", array($fan5id));
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->update(Convert::symbol2sql('DataObjectTest_Fan'))
+            ->set(
+                Convert::symbol2sql('Email'),
+                $qb->createPositionalParameter('')
+            )
+            ->where(
+                $qb->expr()->eq(Convert::symbol2sql('ID'), $qb->createPositionalParameter($fan5id))
+            )->execute();
 
         // Filter by null email
         $nullEmails = $list->filter('Email', null);
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            )
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                )
             ),
             $nullEmails
         );
@@ -1123,17 +1131,17 @@ class DataListTest extends SapphireTest
         $nonNullEmails = $list->filter('Email:not', null);
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Damian',
-                'Email' => 'damian@thefans.com',
-            ),
-            array(
-                'Name' => 'Richard',
-                'Email' => 'richie@richers.com',
-            ),
-            array(
-                'Name' => 'Hamish',
-            )
+                array(
+                    'Name' => 'Damian',
+                    'Email' => 'damian@thefans.com',
+                ),
+                array(
+                    'Name' => 'Richard',
+                    'Email' => 'richie@richers.com',
+                ),
+                array(
+                    'Name' => 'Hamish',
+                )
             ),
             $nonNullEmails
         );
@@ -1142,9 +1150,9 @@ class DataListTest extends SapphireTest
         $emptyOnly = $list->filter('Email', '');
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Hamish',
-            )
+                array(
+                    'Name' => 'Hamish',
+                )
             ),
             $emptyOnly
         );
@@ -1154,20 +1162,20 @@ class DataListTest extends SapphireTest
         $nonEmptyOnly = $list->filter('Email:not', '');
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Damian',
-                'Email' => 'damian@thefans.com',
-            ),
-            array(
-                'Name' => 'Richard',
-                'Email' => 'richie@richers.com',
-            ),
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            )
+                array(
+                    'Name' => 'Damian',
+                    'Email' => 'damian@thefans.com',
+                ),
+                array(
+                    'Name' => 'Richard',
+                    'Email' => 'richie@richers.com',
+                ),
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                )
             ),
             $nonEmptyOnly
         );
@@ -1176,19 +1184,19 @@ class DataListTest extends SapphireTest
         $items1 = $list->filter('Email', array(null, '', 'damian@thefans.com'));
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Damian',
-                'Email' => 'damian@thefans.com',
-            ),
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            ),
-            array(
-                'Name' => 'Hamish',
-            )
+                array(
+                    'Name' => 'Damian',
+                    'Email' => 'damian@thefans.com',
+                ),
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                ),
+                array(
+                    'Name' => 'Hamish',
+                )
             ),
             $items1
         );
@@ -1197,10 +1205,10 @@ class DataListTest extends SapphireTest
         $items2 = $list->filter('Email:not', array(null, '', 'damian@thefans.com'));
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Richard',
-                'Email' => 'richie@richers.com',
-            ),
+                array(
+                    'Name' => 'Richard',
+                    'Email' => 'richie@richers.com',
+                ),
             ),
             $items2
         );
@@ -1209,13 +1217,13 @@ class DataListTest extends SapphireTest
         $items3 = $list->filter('Email', array('', 'damian@thefans.com'));
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Damian',
-                'Email' => 'damian@thefans.com',
-            ),
-            array(
-                'Name' => 'Hamish',
-            )
+                array(
+                    'Name' => 'Damian',
+                    'Email' => 'damian@thefans.com',
+                ),
+                array(
+                    'Name' => 'Hamish',
+                )
             ),
             $items3
         );
@@ -1225,16 +1233,16 @@ class DataListTest extends SapphireTest
         $items4 = $list->filter('Email:not', array('', 'damian@thefans.com'));
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Richard',
-                'Email' => 'richie@richers.com',
-            ),
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            )
+                array(
+                    'Name' => 'Richard',
+                    'Email' => 'richie@richers.com',
+                ),
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                )
             ),
             $items4
         );
@@ -1243,22 +1251,22 @@ class DataListTest extends SapphireTest
         // The extra null check isn't necessary, but check that this doesn't fail
         $items5 = $list->filterAny(
             array(
-            'Email:not' => array('', 'damian@thefans.com'),
-            'Email' => null
+                'Email:not' => array('', 'damian@thefans.com'),
+                'Email' => null
             )
         );
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Richard',
-                'Email' => 'richie@richers.com',
-            ),
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            )
+                array(
+                    'Name' => 'Richard',
+                    'Email' => 'richie@richers.com',
+                ),
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                )
             ),
             $items5
         );
@@ -1267,15 +1275,15 @@ class DataListTest extends SapphireTest
         $items6 = $list->filter('Email', array(null, ''));
         $this->assertListEquals(
             array(
-            array(
-                'Name' => 'Stephen',
-            ),
-            array(
-                'Name' => 'Mitch',
-            ),
-            array(
-                'Name' => 'Hamish',
-            )
+                array(
+                    'Name' => 'Stephen',
+                ),
+                array(
+                    'Name' => 'Mitch',
+                ),
+                array(
+                    'Name' => 'Hamish',
+                )
             ),
             $items6
         );
@@ -1800,9 +1808,12 @@ class DataListTest extends SapphireTest
         // Test an expression with both spaces and commas. This test also tests that column() can be called
         // with a complex sort expression, so keep using column() below
         $teamClass = Convert::raw2sql(SubTeam::class);
-        $list = Team::get()->sort(
-            'CASE WHEN "DataObjectTest_Team"."ClassName" = \'' . $teamClass . '\' THEN 0 ELSE 1 END, "Title" DESC'
-        );
+        $list = Team::get()->sort(sprintf(
+            'CASE WHEN %s = %s THEN 0 ELSE 1 END, %s DESC',
+            Convert::symbol2sql('DataObjectTest_Team.ClassName'),
+            Convert::raw2sql($teamClass),
+            Convert::symbol2sql('Title')
+        ));
         $this->assertEquals(
             array(
             'Subteam 3',
