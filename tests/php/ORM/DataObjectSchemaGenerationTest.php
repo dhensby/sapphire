@@ -39,7 +39,6 @@ class DataObjectSchemaGenerationTest extends SapphireTest
      */
     public function testTableCaseFixed()
     {
-        DB::quiet();
 
         // Modify table case
         DB::get_schema()->renameTable(
@@ -103,7 +102,6 @@ class DataObjectSchemaGenerationTest extends SapphireTest
     {
         $schema = DB::get_schema();
         $test = $this;
-        DB::quiet();
 
         // Table will have been initially created by the $extraDataObjects setting
 
@@ -172,7 +170,6 @@ class DataObjectSchemaGenerationTest extends SapphireTest
     {
         $schema = DB::get_schema();
         $test = $this;
-        DB::quiet();
 
         // Table will have been initially created by the $extraDataObjects setting
 
