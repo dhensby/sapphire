@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM;
 
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
@@ -9,10 +10,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Cookie;
-use SilverStripe\Dev\Deprecation;
-use SilverStripe\ORM\Connect\DBConnector;
 use SilverStripe\ORM\Connect\MySQLQueryBuilder;
-use SilverStripe\ORM\Connect\Query;
 use SilverStripe\ORM\Queries\SQLExpression;
 use SilverStripe\ORM\Connect\Database;
 use InvalidArgumentException;
@@ -30,11 +28,6 @@ class DB
      * @var Database
      */
     private static $connections = array();
-
-    /**
-     * Internal flag to keep track of when db connection was attempted.
-     */
-    private static $connection_attempted = false;
 
     /**
      * Set the global database connection.
@@ -96,7 +89,7 @@ class DB
     /**
      * Retrieves the schema manager for the current database
      *
-     * @param string $name An optional name given to a connection in the DB::setConn() call.  If omitted,
+     * @param string $name An optional name given to a connection in the DB::set_conn() call.  If omitted,
      * the default connection is returned.
      * @return \Doctrine\DBAL\Schema\AbstractSchemaManager
      */
@@ -508,41 +501,12 @@ class DB
      */
     public static function create_database($database)
     {
-        return self::get_conn()->selectDatabase($database, true);
-    }
-
-    /**
-     * Create a new table.
-     * @param string $table The name of the table
-     * @param array$fields A map of field names to field types
-     * @param array $indexes A map of indexes
-     * @param array $options An map of additional options.  The available keys are as follows:
-     *   - 'MSSQLDatabase'/'MySQLDatabase'/'PostgreSQLDatabase' - database-specific options such as "engine"
-     *     for MySQL.
-     *   - 'temporary' - If true, then a temporary table will be created
-     * @param array $advancedOptions Advanced creation options
-     * @return string The table name generated.  This may be different from the table name, for example with
-     * temporary tables.
-     */
-    public static function create_table(
-        $table,
-        $fields = null,
-        $indexes = null,
-        $options = null,
-        $advancedOptions = null
-    ) {
-        return self::get_schema()->createTable($table, $fields, $indexes, $options, $advancedOptions);
-    }
-
-    /**
-     * Create a new field on a table.
-     * @param string $table Name of the table.
-     * @param string $field Name of the field to add.
-     * @param string $spec The field specification, eg 'INTEGER NOT NULL'
-     */
-    public static function create_field($table, $field, $spec)
-    {
-        return self::get_schema()->createField($table, $field, $spec);
+        try {
+            self::get_schema()->createDatabase($database);
+        } catch (DBALException $e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -645,7 +609,11 @@ class DB
      */
     public static function table_list()
     {
-        return self::get_schema()->tableList();
+        return array_change_key_case(
+            ArrayLib::valuekey(self::get_schema()->listTableNames()),
+            CASE_LOWER
+        );
+
     }
 
     /**
@@ -657,15 +625,7 @@ class DB
      */
     public static function field_list($table)
     {
-        return self::get_schema()->fieldList($table);
-    }
-
-    /**
-     * Enable supression of database messages.
-     */
-    public static function quiet()
-    {
-        self::get_schema()->quiet();
+        return self::get_schema()->listTableColumns($table);
     }
 
     /**
