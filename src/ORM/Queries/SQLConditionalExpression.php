@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Queries;
 
 use SilverStripe\Core\Convert;
+use SilverStripe\Dev\Backtrace;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\DB;
 
@@ -572,6 +573,7 @@ abstract class SQLConditionalExpression extends SQLExpression
         if ($value instanceof SQLConditionGroup) {
             return $value;
         } elseif (is_string($key)) {
+
             // Extract the parameter(s) from the value
             if (!is_array($value) || isset($value['type'])) {
                 $parameters = array($value);
@@ -641,6 +643,7 @@ abstract class SQLConditionalExpression extends SQLExpression
 
         $normalised = array();
         foreach ($predicates as $key => $value) {
+
             if (empty($value) && (empty($key) || is_numeric($key))) {
                 continue; // Ignore empty conditions
             }

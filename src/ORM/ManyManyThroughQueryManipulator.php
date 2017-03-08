@@ -186,14 +186,14 @@ class ManyManyThroughQueryManipulator implements DataQueryManipulator
         foreach ($joinTableColumns as $joinTableColumn) {
             $sqlSelect->selectField(
                 Convert::symbol2sql("{$joinTableAlias}.{$joinTableColumn}"),
-                Convert::symbol2sql("{$joinTableAlias}_{$joinTableColumn}")
+                "{$joinTableAlias}_{$joinTableColumn}"
             );
         }
 
         // Apply join and record sql for later insertion (at end of replacements)
         $sqlSelect->addInnerJoin(
             '(SELECT $$_SUBQUERY_$$)',
-            sprintf('%s = %s', Convert::symbol2sql("{$joinTableAlias}.{$localKey}"), Convert::symbol2sql($childField)),
+            sprintf('%s = %s', Convert::symbol2sql("{$joinTableAlias}.{$localKey}"), $childField),
             $joinTableAlias,
             20,
             $joinTableParameters

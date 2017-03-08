@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Queries;
 
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\Backtrace;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\DB;
 use InvalidArgumentException;

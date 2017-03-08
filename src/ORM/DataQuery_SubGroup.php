@@ -2,7 +2,10 @@
 
 namespace SilverStripe\ORM;
 
+use SilverStripe\ORM\Connect\MySQLQueryBuilder;
+use SilverStripe\ORM\Queries\SQLConditionalExpression;
 use SilverStripe\ORM\Queries\SQLConditionGroup;
+use SilverStripe\ORM\Queries\SQLExpression;
 use SilverStripe\ORM\Queries\SQLSelect;
 
 /**
@@ -16,7 +19,6 @@ class DataQuery_SubGroup extends DataQuery implements SQLConditionGroup
 {
 
     /**
-     *
      * @var SQLSelect
      */
     protected $whereQuery;
@@ -59,19 +61,34 @@ class DataQuery_SubGroup extends DataQuery implements SQLConditionGroup
             return null;
         }
 
-        $conditions = [];
-        $parameters = [];
-
-        foreach ($where as $clauses) {
-            foreach ($clauses as $clause => $params) {
-                $conditions[] = $clause;
-                $parameters = array_merge($parameters, $params);
-            }
-        }
-
-        $connective = $this->whereQuery->getConnective();
-
-        $sql = " WHERE (" . implode(") {$connective} (", $conditions) . ")";
+        $sql = (new MySQLQueryBuilder())->buildWhereFragment($this->whereQuery, $parameters);
+//        $conditions = [];
+//        $parameters = [];
+//        foreach ($where as $clauses) {
+//            var_export($clauses);
+//            if ($clauses instanceof SQLConditionGroup) {
+//
+//            }
+//            foreach ($clauses as $clause => $params) {
+//                $conditions[] = $clause;
+////                if ($params instanceof SQLConditionalExpression) {
+//////                    var_export($params);
+////                    $params->getWhereParameterised($parameters);
+////                } else {
+////                    var_export([
+////                        'clause' => $clause,
+////                        'params' => $params,
+////                        'conditions' => $conditions,
+////                        'parameters' => $parameters
+////                    ]);
+//                    $parameters = array_merge($parameters, $params);
+////                }
+//            }
+//        }
+//
+//        $connective = $this->whereQuery->getConnective();
+//
+//        $sql = " WHERE (" . implode(") {$connective} (", $conditions) . ")";
 
         return preg_replace('/^\s*WHERE\s*/i', '', $sql);
     }

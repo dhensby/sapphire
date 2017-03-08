@@ -3,10 +3,10 @@
 namespace SilverStripe\ORM\Tests;
 
 use SilverStripe\Core\Convert;
-use SilverStripe\ORM\DataQuery;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\DB;
 use SilverStripe\Dev\SapphireTest;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DataQuery;
+use SilverStripe\ORM\DB;
 use SilverStripe\Security\Member;
 
 /**
@@ -44,10 +44,10 @@ class DataQueryTest extends SapphireTest
         $query = new DataQuery(DataQueryTest\ObjectB::class);
         $result = $query->leftJoin(
             'DataQueryTest_C',
-            sprintf('%s = %s', Convert::symbol2sql('DataQueryTest_B.TestCID', Convert::symbol2sql('DataQueryTest_B.ID')))
+            sprintf('%s = %s', Convert::symbol2sql('DataQueryTest_B.TestCID'), Convert::symbol2sql('DataQueryTest_B.ID'))
         )->sort('DataQueryTest_B.Title', 'ASC');
 
-        $result = $result->execute()->record();
+        $result = $result->execute()->fetch(\PDO::FETCH_ASSOC);
         $this->assertEquals('Foo', $result['Title']);
     }
 
@@ -167,7 +167,13 @@ class DataQueryTest extends SapphireTest
     public function testRelationOrderWithCustomJoin()
     {
         $dataQuery = new DataQuery(DataQueryTest\ObjectB::class);
-        $dataQuery->innerJoin('DataQueryTest_D', '"DataQueryTest_D"."RelationID" = "DataQueryTest_B"."ID"');
+        $dataQuery->innerJoin(
+            'DataQueryTest_D',
+            sprintf('%s = %s',
+                Convert::symbol2sql('DataQueryTest_D.RelationID'),
+                Convert::symbol2sql('DataQueryTest_B.ID')
+            )
+        );
         $dataQuery->execute();
     }
 
@@ -285,60 +291,88 @@ class DataQueryTest extends SapphireTest
         $qb->insert(
             Convert::symbol2sql('DataQueryTest_F')
         )->values(array(
-            Convert::symbol2sql('SortOder') => 2,
+            Convert::symbol2sql('SortOrder') => 2,
         ))->execute();
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"SortOrder\") VALUES (2)");
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"SortOrder"', '2'));
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('SortOrder'), '2'));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find SortOrder");
         static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateFull()
     {
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"MyDate\") VALUES ('1988-03-04 06:30')");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
+        ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"MyDate"', '1988-03-04%'));
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988-03-04%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
         static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateStartsWith()
     {
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"MyDate\") VALUES ('1988-03-04 06:30')");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
+        ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"MyDate"', '1988%'));
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
         static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateStartsPartial()
     {
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"MyDate\") VALUES ('1988-03-04 06:30')");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
+        ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"MyDate"', '%03-04%'));
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('%03-04%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
         static::resetDBSchema(true);
     }
 
     public function testComparisonClauseTextCaseInsensitive()
     {
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"MyString\") VALUES ('HelloWorld')");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('MyString') => Convert::raw2sql('HelloWorld'),
+        ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"MyString"', 'helloworld'));
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('helloworld')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyString");
         static::resetDBSchema(true);
     }
 
     public function testComparisonClauseTextCaseSensitive()
     {
-        DB::query("INSERT INTO \"DataQueryTest_F\" (\"MyString\") VALUES ('HelloWorld')");
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->insert(
+            Convert::symbol2sql('DataQueryTest_F')
+        )->values(array(
+            Convert::symbol2sql('MyString') => Convert::raw2sql('HelloWorld'),
+        ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->comparisonClause('"MyString"', 'HelloWorld', false, false, true));
+        // @todo - this used to use `comparisonClause` method but that's been replaced with
+        // `generateComparisonClause` on SearchFilter instead
+        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('HelloWorld'),
+            false, false, true));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyString");
 
         $query2 = new DataQuery(DataQueryTest\ObjectF::class);
-        $query2->where(DB::get_conn()->comparisonClause('"MyString"', 'helloworld', false, false, true));
+        $query2->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('helloworld'),
+            false, false, true));
         $this->assertEquals(0, $query2->count(), "Found mystring. Shouldn't be able too.");
         static::resetDBSchema(true);
     }
@@ -353,7 +387,7 @@ class DataQueryTest extends SapphireTest
         $query->sort('"SortOrder"');
         $query->where(
             array(
-            '"DataQueryTest_C"."Title" = ?' => array('First')
+                '"DataQueryTest_C"."Title" = ?' => array('First')
             )
         );
         $result = $query->getFinalisedQuery(array('Title'));
@@ -363,12 +397,12 @@ class DataQueryTest extends SapphireTest
 
         // Including filter on sub-table requires it
         $query = new DataQuery(DataQueryTest\ObjectC::class);
-        $query->sort('"SortOrder"');
+        $query->sort('SortOrder');
         $query->where(
             array(
-            '"DataQueryTest_C"."Title" = ? OR "DataQueryTest_E"."SortOrder" > ?' => array(
-                'First', 2
-            )
+                'DataQueryTest_C.Title = ? OR DataQueryTest_E.SortOrder > ?' => array(
+                    'First', 2
+                )
             )
         );
         $result = $query->getFinalisedQuery(array('Title'));

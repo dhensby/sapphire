@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Tests;
 
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Convert;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\i18n\i18n;
 use SilverStripe\ORM\DataObjectSchema;
@@ -776,10 +777,11 @@ class DataObjectTest extends SapphireTest
         $this->assertFalse($obj->isChanged());
 
         /* If we perform the same random query twice, it shouldn't return the same results */
-        $itemsA = DataObject::get(DataObjectTest\TeamComment::class, "", DB::get_conn()->random());
-        $itemsB = DataObject::get(DataObjectTest\TeamComment::class, "", DB::get_conn()->random());
-        $itemsC = DataObject::get(DataObjectTest\TeamComment::class, "", DB::get_conn()->random());
-        $itemsD = DataObject::get(DataObjectTest\TeamComment::class, "", DB::get_conn()->random());
+        // @todo - there's no abstract way to get `RAND()`
+        $itemsA = DataObject::get(DataObjectTest\TeamComment::class, "", 'RAND()');
+        $itemsB = DataObject::get(DataObjectTest\TeamComment::class, "", 'RAND()');
+        $itemsC = DataObject::get(DataObjectTest\TeamComment::class, "", 'RAND()');
+        $itemsD = DataObject::get(DataObjectTest\TeamComment::class, "", 'RAND()');
         foreach ($itemsA as $item) {
             $keysA[] = $item->ID;
         }
@@ -805,9 +807,18 @@ class DataObjectTest extends SapphireTest
         $captainID = $this->idFromFixture(DataObjectTest\Player::class, 'player1');
         $team->CaptainID = $captainID;
         $team->write();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('CaptainID'))
+            ->from(Convert::symbol2sql('DataObjectTest_Team'))
+            ->where(
+                $qb->expr()->eq(
+                    Convert::symbol2sql('ID'),
+                    $qb->createPositionalParameter($team->ID)
+                )
+            );
         $this->assertEquals(
             $captainID,
-            DB::query("SELECT \"CaptainID\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $team->ID")->value()
+            $qb->execute()->fetchColumn()
         );
 
         /* After giving it a value, you should also be able to set it back to null */
@@ -815,7 +826,7 @@ class DataObjectTest extends SapphireTest
         $team->write();
         $this->assertEquals(
             0,
-            DB::query("SELECT \"CaptainID\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $team->ID")->value()
+            $qb->execute()->fetchColumn()
         );
 
         /* You should also be able to save a blank to it when it's first created */
@@ -824,16 +835,25 @@ class DataObjectTest extends SapphireTest
         $team->write();
         $this->assertEquals(
             0,
-            DB::query("SELECT \"CaptainID\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $team->ID")->value()
+            $qb->execute()->fetchColumn()
         );
 
         /* Ditto for existing records without a value */
         $existingTeam = $this->objFromFixture(DataObjectTest\Team::class, 'team1');
         $existingTeam->CaptainID = '';
         $existingTeam->write();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('CaptainID'))
+            ->from(Convert::symbol2sql('DataObjectTest_Team'))
+            ->where(
+                $qb->expr()->eq(
+                    Convert::symbol2sql('ID'),
+                    $existingTeam->ID
+                )
+            );
         $this->assertEquals(
             0,
-            DB::query("SELECT \"CaptainID\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $existingTeam->ID")->value()
+            $qb->execute()->fetchColumn()
         );
     }
 
@@ -867,17 +887,47 @@ class DataObjectTest extends SapphireTest
         $obj->write();
 
         $this->assertNotNull($obj->ID);
+
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('Data'))
+           ->from(Convert::symbol2sql('DataObjectTest_Fixture'))
+           ->where(
+               $qb->expr()->eq(
+                   Convert::symbol2sql('ID'),
+                   $qb->createPositionalParameter($obj->ID)
+               )
+           );
         $this->assertEquals(
             'value1',
-            DB::query("SELECT \"Data\" FROM \"DataObjectTest_Fixture\" WHERE \"ID\" = $obj->ID")->value()
+            $qb->execute()->fetchColumn()
         );
+
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('DbObject'))
+           ->from(Convert::symbol2sql('DataObjectTest_Fixture'))
+           ->where(
+               $qb->expr()->eq(
+                   Convert::symbol2sql('ID'),
+                   $qb->createPositionalParameter($obj->ID)
+               )
+           );
         $this->assertEquals(
             'value2',
-            DB::query("SELECT \"DbObject\" FROM \"DataObjectTest_Fixture\" WHERE \"ID\" = $obj->ID")->value()
+            $qb->execute()->fetchColumn()
         );
+
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('Duplicate'))
+           ->from(Convert::symbol2sql('DataObjectTest_Fixture'))
+           ->where(
+               $qb->expr()->eq(
+                   Convert::symbol2sql('ID'),
+                   $qb->createPositionalParameter($obj->ID)
+               )
+           );
         $this->assertEquals(
             'value3',
-            DB::query("SELECT \"Duplicate\" FROM \"DataObjectTest_Fixture\" WHERE \"ID\" = $obj->ID")->value()
+            $qb->execute()->fetchColumn()
         );
     }
 
@@ -1255,9 +1305,18 @@ class DataObjectTest extends SapphireTest
         /* Creating a new object of a subclass should set the ClassName field correctly */
         $obj = new DataObjectTest\SubTeam();
         $obj->write();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('ClassName'))
+            ->from(Convert::symbol2sql('DataObjectTest_Team'))
+            ->where(
+                $qb->expr()->eq(
+                    Convert::symbol2sql('ID'),
+                    $qb->createPositionalParameter($obj->ID)
+                )
+            );
         $this->assertEquals(
             DataObjectTest\SubTeam::class,
-            DB::query("SELECT \"ClassName\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $obj->ID")->value()
+            $qb->execute()->fetchColumn()
         );
     }
 
@@ -1277,21 +1336,47 @@ class DataObjectTest extends SapphireTest
             $conn->allowPrimaryKeyEditing(DataObjectTest\Team::class, false);
         }
 
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('ClassName'))
+            ->from(Convert::symbol2sql('DataObjectTest_Team'))
+            ->where(
+                $qb->expr()->eq(
+                    Convert::symbol2sql('ID'),
+                    $qb->createPositionalParameter($obj->ID)
+                )
+            );
         $this->assertEquals(
             DataObjectTest\SubTeam::class,
-            DB::query("SELECT \"ClassName\" FROM \"DataObjectTest_Team\" WHERE \"ID\" = $obj->ID")->value()
+            $qb->execute()->fetchColumn()
         );
 
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('ID'))
+           ->from(Convert::symbol2sql('DataObjectTest_SubTeam'))
+           ->where(
+               $qb->expr()->eq(
+                   Convert::symbol2sql('SubclassDatabaseField'),
+                   $qb->createPositionalParameter('asdfasdf')
+               )
+           );
         /* Check that it actually saves to the database with the correct ID */
         $this->assertEquals(
             "1001",
-            DB::query(
-                "SELECT \"ID\" FROM \"DataObjectTest_SubTeam\" WHERE \"SubclassDatabaseField\" = 'asdfasdf'"
-            )->value()
+            $qb->execute()->fetchColumn()
         );
+
+        $qb = DB::get_conn()->createQueryBuilder();
+        $qb->select(Convert::symbol2sql('ID'))
+           ->from(Convert::symbol2sql('DataObjectTest_Team'))
+           ->where(
+               $qb->expr()->eq(
+                   Convert::symbol2sql('Title'),
+                   $qb->createPositionalParameter('asdfasdf')
+               )
+           );
         $this->assertEquals(
             "1001",
-            DB::query("SELECT \"ID\" FROM \"DataObjectTest_Team\" WHERE \"Title\" = 'asdfasdf'")->value()
+            $qb->execute()->fetchColumn()
         );
     }
 
@@ -1725,8 +1810,7 @@ class DataObjectTest extends SapphireTest
         // Check that the values of those fields are properly read from the database
         $values = DataObject::get(
             DataObjectTest\Team::class,
-            "\"DataObjectTest_Team\".\"ID\" IN
-			($obj1->ID, $obj2->ID)"
+            sprintf('%s IN (%s, %s)', Convert::symbol2sql('DataObjectTest_Team.ID'), $obj1->ID, $obj2->ID)
         )->column("SubclassDatabaseField");
         $this->assertEquals(array_intersect($values, array('obj1', 'obj2')), $values);
     }

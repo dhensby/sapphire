@@ -35,6 +35,23 @@ class DataObjectSchemaGenerationTest extends SapphireTest
         parent::setUpBeforeClass();
     }
 
+    public function tearDown()
+    {
+        if (in_array('DataOBJECTSchemaGenerationTest_do', DB::table_list())) {
+            // @todo - remove this - reset the DB table name as the case fixing test is failing at the moment
+            DB::get_schema()->renameTable(
+                'DataOBJECTSchemaGenerationTest_do',
+                '__TEMP__DataOBJECTSchemaGenerationTest_do'
+            );
+            DB::get_schema()->renameTable(
+                '__TEMP__DataOBJECTSchemaGenerationTest_do',
+                'DataObjectSchemaGenerationTest_DO'
+            );
+        }
+
+        parent::tearDown();
+    }
+
     /**
      * @skipUpgrade
      */
@@ -132,36 +149,31 @@ class DataObjectSchemaGenerationTest extends SapphireTest
      */
     public function testIndexesDontRerequestChanges()
     {
-        $schema = DB::get_schema();
-        $test = $this;
+        $schema = DB::get_schema()->createSchema();
+        $newSchema = clone $schema;
+        $newSchema->dropTable('DataObjectSchemaGenerationTest_IndexDO');
 
         // Table will have been initially created by the $extraDataObjects setting
 
         // Verify that it doesn't need to be recreated
-        $schema->schemaUpdate(
-            function () use ($test, $schema) {
-                $obj = new TestIndexObject();
-                $obj->requireTable();
-                $needsUpdating = $schema->doesSchemaNeedUpdating();
-                $schema->cancelSchemaUpdate();
-                $test->assertFalse($needsUpdating);
-            }
-        );
+        TestIndexObject::singleton()->augmentDBSchema($newSchema);
+
+        $migrateSQL = $schema->getMigrateToSql($newSchema, DB::get_conn()->getDatabasePlatform());
+
+        $this->assertEmpty($migrateSQL);
 
         // Test with alternate index format, although these indexes are the same
         $config = TestIndexObject::config();
         $config->set('indexes', $config->get('indexes_alt'));
 
+        $newSchema->dropTable('DataObjectSchemaGenerationTest_IndexDO');
+        TestIndexObject::singleton()->augmentDBSchema($newSchema);
+
         // Verify that it still doesn't need to be recreated
-        $schema->schemaUpdate(
-            function () use ($test, $schema) {
-                $obj2 = new TestIndexObject();
-                $obj2->requireTable();
-                $needsUpdating = $schema->doesSchemaNeedUpdating();
-                $schema->cancelSchemaUpdate();
-                $test->assertFalse($needsUpdating);
-            }
-        );
+
+        $migrateSQL = $schema->getMigrateToSql($newSchema, DB::get_conn()->getDatabasePlatform());
+
+        $this->assertEmpty($migrateSQL);
     }
 
     /**
@@ -169,8 +181,9 @@ class DataObjectSchemaGenerationTest extends SapphireTest
      */
     public function testIndexesRerequestChanges()
     {
-        $schema = DB::get_schema();
-        $test = $this;
+        $schema = DB::get_schema()->createSchema();
+        $newSchema = clone $schema;
+        $newSchema->dropTable('DataObjectSchemaGenerationTest_IndexDO');
 
         // Table will have been initially created by the $extraDataObjects setting
 
@@ -185,15 +198,11 @@ class DataObjectSchemaGenerationTest extends SapphireTest
         );
 
         // Verify that the above index change triggered a schema update
-        $schema->schemaUpdate(
-            function () use ($test, $schema) {
-                $obj = new TestIndexObject();
-                $obj->requireTable();
-                $needsUpdating = $schema->doesSchemaNeedUpdating();
-                $schema->cancelSchemaUpdate();
-                $test->assertTrue($needsUpdating);
-            }
-        );
+        TestIndexObject::singleton()->augmentDBSchema($newSchema);
+
+        $migrateSQL = $schema->getMigrateToSql($newSchema, DB::get_conn()->getDatabasePlatform());
+
+        $this->assertNotEmpty($migrateSQL);
     }
 
     /**

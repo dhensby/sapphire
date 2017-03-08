@@ -245,7 +245,7 @@ class Hierarchy extends DataExtension
         return Versioned::get_including_deleted(
             $this->owner->baseClass(),
             [ $parentIDColumn => $this->owner->ID ],
-            sprintf('%s ASC', Convert::symbol2sql("{$baseTable}.ID"))
+            sprintf('%s ASC', "{$baseTable}.ID")
         );
     }
 

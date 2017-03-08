@@ -51,8 +51,9 @@ class PolymorphicHasManyList extends HasManyList
         // DataList::relation) the filter must be generalised to filter by subclasses
         $classNames = Convert::raw2sql(ClassInfo::subclassesFor($foreignClass));
         $this->dataQuery->where(sprintf(
-            "\"{$this->classForeignKey}\" IN ('%s')",
-            implode("', '", $classNames)
+            "%s IN (%s)",
+            Convert::symbol2sql($this->classForeignKey),
+            implode(', ', $classNames)
         ));
     }
 
