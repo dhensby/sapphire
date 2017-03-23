@@ -25,16 +25,6 @@ class RequestHandlingTest extends FunctionalTest
     protected static $fixture_file = null;
 
     protected static $illegal_extensions = array(
-        // Suppress CMS error page handling
-        Controller::class => array(
-            ErrorPageControllerExtension::class,
-        ),
-        Form::class => array(
-            ErrorPageControllerExtension::class,
-        ),
-        LeftAndMain::class => array(
-            ErrorPageControllerExtension::class,
-        ),
     );
 
     protected static $extra_controllers = [
