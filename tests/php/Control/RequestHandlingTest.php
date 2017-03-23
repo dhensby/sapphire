@@ -2,8 +2,6 @@
 
 namespace SilverStripe\Control\Tests;
 
-use SilverStripe\Admin\LeftAndMain;
-use SilverStripe\CMS\Controllers\ErrorPageControllerExtension;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Tests\RequestHandlingTest\AllowedController;
 use SilverStripe\Control\Tests\RequestHandlingTest\ControllerFormWithAllowedActions;
@@ -25,16 +23,6 @@ class RequestHandlingTest extends FunctionalTest
     protected static $fixture_file = null;
 
     protected static $illegal_extensions = array(
-        // Suppress CMS error page handling
-        Controller::class => array(
-            ErrorPageControllerExtension::class,
-        ),
-        Form::class => array(
-            ErrorPageControllerExtension::class,
-        ),
-        LeftAndMain::class => array(
-            ErrorPageControllerExtension::class,
-        ),
     );
 
     protected static $extra_controllers = [
