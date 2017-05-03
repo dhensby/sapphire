@@ -30,8 +30,8 @@ class DBMoneyTest extends SapphireTest
         $obj = $this->objFromFixture(DBMoneyTest\TestObject::class, 'test1');
 
         $this->assertInstanceOf(DBMoney::class, $obj->MyMoney);
-        $this->assertEquals($obj->MyMoney->getCurrency(), 'EUR');
-        $this->assertEquals($obj->MyMoney->getAmount(), 1.23);
+        $this->assertEquals('EUR',$obj->MyMoney->getCurrency());
+        $this->assertEquals(1.23, $obj->MyMoney->getAmount());
     }
 
     public function testDataObjectChangedFields()

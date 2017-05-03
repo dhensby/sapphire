@@ -63,14 +63,12 @@ class DBVarchar extends DBString
 
     public function scaffoldFormField($title = null, $params = null)
     {
-        // Set field with appropriate size
-        $field = TextField::create($this->name, $title);
-        $field->setMaxLength($this->getSize());
-
-        // Allow the user to select if it's null instead of automatically assuming empty string is
         if (!$this->getNullifyEmpty()) {
-            return NullableField::create($field);
+            // Allow the user to select if it's null instead of automatically assuming empty string is
+            return NullableField::create(new TextField($this->name, $title));
+        } else {
+            // Automatically determine null (empty string)
+            return parent::scaffoldFormField($title);
         }
-        return $field;
     }
 }

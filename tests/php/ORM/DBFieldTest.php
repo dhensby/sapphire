@@ -7,6 +7,7 @@ use SilverStripe\ORM\FieldType\DBBoolean;
 use SilverStripe\ORM\FieldType\DBDecimal;
 use SilverStripe\ORM\FieldType\DBFloat;
 use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\FieldType\DBInt;
 use SilverStripe\ORM\FieldType\DBString;
 use SilverStripe\ORM\FieldType\DBTime;
 use SilverStripe\ORM\FieldType\DBVarchar;
@@ -42,6 +43,7 @@ class DBFieldTest extends SapphireTest
         $this->assertEquals('0', $float->prepValueForDB('0'));
 
         /* Integer behaviour, asserting we have 0 */
+        /** @var DBInt $int */
         $int = singleton('Int');
         $this->assertEquals(0, $int->prepValueForDB(0));
         $this->assertEquals(0, $int->prepValueForDB(null));
@@ -137,7 +139,8 @@ class DBFieldTest extends SapphireTest
         $this->assertEquals('123', $text->prepValueForDB(123));
 
         /* AllowEmpty Text behaviour */
-        $textField = DBText::create("testfield", array("nullifyEmpty"=>false));
+        $textField = DBText::create("testfield", null, array("nullifyEmpty"=>false));
+        $this->assertFalse($textField->getNullifyEmpty());
         $this->assertSame('0', $textField->prepValueForDB(0));
         $this->assertSame(null, $textField->prepValueForDB(null));
         $this->assertSame('', $textField->prepValueForDB(false));
@@ -208,7 +211,7 @@ class DBFieldTest extends SapphireTest
         $textField->setValue(null);
         $this->assertFalse($textField->exists());
 
-        $textField = new DBText("testfield", array('nullifyEmpty'=>false));
+        $textField = new DBText("testfield", null, array('nullifyEmpty'=>false));
         $this->assertFalse($textField->getNullifyEmpty());
         $textField->setValue('abc');
         $this->assertTrue($textField->exists());

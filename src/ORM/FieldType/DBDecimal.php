@@ -72,6 +72,14 @@ class DBDecimal extends DBField
         return Type::DECIMAL;
     }
 
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'precision' => $this->wholeSize,
+            'scale' => $this->decimalSize,
+        ];
+    }
+
     public function saveInto($dataObject)
     {
         $fieldName = $this->name;

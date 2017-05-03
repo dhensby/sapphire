@@ -24,6 +24,8 @@ abstract class DBString extends DBField
         "Plain" => "Text",
     );
 
+    private static $default_size = 255;
+
     /**
      * Set the default value for "nullify empty"
      *
@@ -54,7 +56,7 @@ abstract class DBString extends DBField
      */
     public function getSize()
     {
-        return $this->size ?: 255;
+        return $this->size ?: $this->config()->default_size;
     }
 
     public function setSize($size)
