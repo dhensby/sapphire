@@ -58,6 +58,7 @@ class HTMLEditorFieldTest extends FunctionalTest
             Filesystem::makeFolder(dirname($destPath));
             copy($fromPath, $destPath);
         }
+        $this->markTestSkipped();
     }
 
     protected function tearDown()

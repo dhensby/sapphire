@@ -3,8 +3,6 @@
 namespace SilverStripe\Control\Tests;
 
 use InvalidArgumentException;
-use SilverStripe\Control\Controller;
-use SilverStripe\Control\Director;
 use SilverStripe\Control\Tests\ControllerTest\AccessBaseController;
 use SilverStripe\Control\Tests\ControllerTest\AccessSecuredController;
 use SilverStripe\Control\Tests\ControllerTest\AccessWildcardSecuredController;
@@ -15,6 +13,9 @@ use SilverStripe\Control\Tests\ControllerTest\IndexSecuredController;
 use SilverStripe\Control\Tests\ControllerTest\SubController;
 use SilverStripe\Control\Tests\ControllerTest\TestController;
 use SilverStripe\Control\Tests\ControllerTest\UnsecuredController;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\Dev\FunctionalTest;
 use SilverStripe\Security\Member;

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Core\Tests\Manifest;
 
+use SilverStripe\Control\Controller;
 use SilverStripe\Admin\ModelAdmin;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Manifest\ClassManifest;
@@ -53,8 +54,9 @@ class NamespacedClassManifestTest extends SapphireTest
         // including all core classes
         $method = new ReflectionMethod($this->manifest, 'coalesceDescendants');
         $method->setAccessible(true);
-        $method->invoke($this->manifest, ModelAdmin::class);
-        $this->assertContains('SilverStripe\\Framework\\Tests\\ClassI', ClassInfo::subclassesFor(ModelAdmin::class));
+        $method->invoke($this->manifest, Controller::class);
+
+        $this->assertContains('SilverStripe\Framework\Tests\ClassI', ClassInfo::subclassesFor(Controller::class));
     }
 
     public function testGetItemPath()

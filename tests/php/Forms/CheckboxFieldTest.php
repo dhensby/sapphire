@@ -104,7 +104,7 @@ class CheckboxFieldTest extends SapphireTest
             1,
             DB::get_conn()->createQueryBuilder()
                 ->select(Convert::symbol2sql('IsChecked'))
-                ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(\PDO::FETCH_COLUMN),
+                ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(),
             'We have a 1 set in the database, because the field saved into as a 1'
         );
 
@@ -131,7 +131,7 @@ class CheckboxFieldTest extends SapphireTest
             0,
             DB::get_conn()->createQueryBuilder()
               ->select(Convert::symbol2sql('IsChecked'))
-              ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(\PDO::FETCH_COLUMN),
+              ->from(Convert::symbol2sql('CheckboxFieldTest_Article'))->execute()->fetchColumn(),
             'We have a 0 set in the database, because the field saved into as a 0'
         );
 
