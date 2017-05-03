@@ -17,6 +17,12 @@ class PDODatabaseTest extends SapphireTest
         MySQLDatabaseTest\Data::class
     );
 
+    public function setUp()
+    {
+        parent::setUp();
+        $this->markTestSkipped();
+    }
+
     public function testPreparedStatements()
     {
         if (!(DB::get_connector() instanceof PDOConnector)) {

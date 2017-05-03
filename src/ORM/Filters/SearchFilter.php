@@ -121,13 +121,13 @@ abstract class SearchFilter
             }
         } else {
             if ($negate) {
-                if ($caseSensitive) {
+                if ($caseSensitive !== false) {
                     return $eb->notLike($quotedField, '?');
                 } else {
                     return $eb->notLike($field, 'BINARY ?');
                 }
             } else {
-                if ($caseSensitive) {
+                if ($caseSensitive !== false) {
                     return $eb->like($quotedField, '?');
                 } else {
                     return $eb->like($quotedField, ' BINARY ?');

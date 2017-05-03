@@ -117,7 +117,7 @@ class CheckboxSetFieldTest extends SapphireTest
         $field->saveInto($article);
 
         $qb = DB::get_conn()->createQueryBuilder();
-        $this->assertNull(
+        $this->assertFalse(
             $qb->select('*')
                 ->from(Convert::symbol2sql('CheckboxSetFieldTest_Article_Tags'))
                 ->where(

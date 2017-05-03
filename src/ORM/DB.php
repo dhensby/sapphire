@@ -593,12 +593,15 @@ class DB
 
     /**
      * Return the number of rows affected by the previous operation.
-     *
+     * @todo candidate for removal as it doesn't seem like there's a way to fetch this
      * @return integer The number of affected rows
      */
     public static function affected_rows()
     {
-        return self::get_conn()->affectedRows();
+        if (self::get_conn()->getDatabasePlatform()->supportsGettingAffectedRows()) {
+//            self::get_conn()->
+        }
+        return false;
     }
 
     /**

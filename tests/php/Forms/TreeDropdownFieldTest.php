@@ -77,9 +77,10 @@ class TreeDropdownFieldTest extends SapphireTest
         $file2 = $this->objFromFixture(File::class, 'subfolderfile2');
         $cssPath = 'ul.tree li#selector-TestTree-'.$subfolder->ID.' li#selector-TestTree-'.$file1->ID.' a';
         $firstResult = $parser->getBySelector($cssPath);
+
         $this->assertNotEmpty(
             $firstResult,
-            $file1->Name.' with ID '.$file1->ID.' is in search results'
+            $file1->Name.' with ID '.$file1->ID.' is not in search results'
         );
         $this->assertEquals(
             $file1->Name,
