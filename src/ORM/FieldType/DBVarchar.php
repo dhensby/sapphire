@@ -62,7 +62,7 @@ class DBVarchar extends DBString
 
     public function scaffoldFormField($title = null, $params = null)
     {
-        if (!$this->nullifyEmpty) {
+        if (!$this->getNullifyEmpty()) {
             // Allow the user to select if it's null instead of automatically assuming empty string is
             return new NullableField(new TextField($this->name, $title));
         } else {

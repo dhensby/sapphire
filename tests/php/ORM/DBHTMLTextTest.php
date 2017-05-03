@@ -219,23 +219,23 @@ class DBHTMLTextTest extends SapphireTest
     public function testCreate()
     {
         /** @var DBHTMLText $field */
-        $field = Injector::inst()->create("HTMLFragment(['whitelist' => 'link'])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['whitelist' => 'link'])", 'MyField');
         $this->assertEquals(['link'], $field->getWhitelist());
-        $field = Injector::inst()->create("HTMLFragment(['whitelist' => 'link,a'])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['whitelist' => 'link,a'])", 'MyField');
         $this->assertEquals(['link', 'a'], $field->getWhitelist());
-        $field = Injector::inst()->create("HTMLFragment(['whitelist' => ['link', 'a']])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['whitelist' => ['link', 'a']])", 'MyField');
         $this->assertEquals(['link', 'a'], $field->getWhitelist());
         $field = Injector::inst()->create("HTMLFragment", 'MyField');
         $this->assertEmpty($field->getWhitelist());
 
         // Test shortcodes
-        $field = Injector::inst()->create("HTMLFragment(['shortcodes' => true])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['shortcodes' => true])", 'MyField');
         $this->assertEquals(true, $field->getProcessShortcodes());
-        $field = Injector::inst()->create("HTMLFragment(['shortcodes' => false])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['shortcodes' => false])", 'MyField');
         $this->assertEquals(false, $field->getProcessShortcodes());
 
         // Mix options
-        $field = Injector::inst()->create("HTMLFragment(['shortcodes' => true, 'whitelist' => ['a'])", 'MyField');
+        $field = Injector::inst()->create("HTMLFragment(255, ['shortcodes' => true, 'whitelist' => ['a'])", 'MyField');
         $this->assertEquals(true, $field->getProcessShortcodes());
         $this->assertEquals(['a'], $field->getWhitelist());
     }
@@ -435,14 +435,14 @@ class DBHTMLTextTest extends SapphireTest
 
     function testWhitelist()
     {
-        $textObj = new DBHTMLText('Test', ['whitelist'=> 'meta,link']);
+        $textObj = new DBHTMLText('Test', null, ['whitelist'=> 'meta,link']);
         $this->assertEquals(
             '<meta content="Keep"><link href="Also Keep">',
             $textObj->whitelistContent('<meta content="Keep"><p>Remove</p><link href="Also Keep" />Remove Text'),
             'Removes any elements not in whitelist excluding text elements'
         );
 
-        $textObj = new DBHTMLText('Test', ['whitelist'=> 'meta,link,text()']);
+        $textObj = new DBHTMLText('Test', null, ['whitelist'=> 'meta,link,text()']);
         $this->assertEquals(
             '<meta content="Keep"><link href="Also Keep">Keep Text',
             $textObj->whitelistContent('<meta content="Keep"><p>Remove</p><link href="Also Keep" />Keep Text'),

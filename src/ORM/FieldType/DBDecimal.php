@@ -28,7 +28,6 @@ class DBDecimal extends DBField
         $this->decimalSize = is_int($decimalSize) ? $decimalSize : 2;
 
         $this->defaultValue = number_format((float) $defaultValue, $decimalSize);
-        ;
 
         parent::__construct($name);
     }
@@ -52,6 +51,14 @@ class DBDecimal extends DBField
     public function getDBType()
     {
         return Type::DECIMAL;
+    }
+
+    public function getDBOptions()
+    {
+        return parent::getDBOptions() + [
+            'precision' => $this->wholeSize,
+            'scale' => $this->decimalSize,
+        ];
     }
 
     public function saveInto($dataObject)

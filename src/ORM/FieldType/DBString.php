@@ -29,6 +29,8 @@ abstract class DBString extends DBField
         "Plain" => "Text",
     );
 
+    private static $default_size = 255;
+
     /**
      * Construct a string type field with a set of optional parameters.
      *
@@ -64,7 +66,7 @@ abstract class DBString extends DBField
      */
     public function getSize()
     {
-        return $this->size ?: 255;
+        return $this->size ?: $this->config()->default_size;
     }
 
     public function setSize($size)
@@ -103,7 +105,7 @@ abstract class DBString extends DBField
     public function setOptions(array $options = array())
     {
         if (array_key_exists("nullifyEmpty", $options)) {
-            $this->nullifyEmpty = $options["nullifyEmpty"] ? true : false;
+            $this->setNullifyEmpty($options["nullifyEmpty"]);
         }
         if (array_key_exists("default", $options)) {
             $this->setDefaultValue($options["default"]);
@@ -123,6 +125,7 @@ abstract class DBString extends DBField
     public function setNullifyEmpty($value)
     {
         $this->nullifyEmpty = ($value ? true : false);
+        return $this;
     }
 
     /**
@@ -155,7 +158,7 @@ abstract class DBString extends DBField
         }
 
         // Return "empty" value
-        if ($this->nullifyEmpty || $value === null) {
+        if ($this->getNullifyEmpty() || $value === null) {
             return null;
         }
         return '';

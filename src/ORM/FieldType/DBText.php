@@ -38,11 +38,12 @@ class DBText extends DBString
         "Summary" => "Text",
     );
 
-    public function getSize()
-    {
-        // 16777215 will force "mediumtext" in mysql driver
-        return $this->size ?: 16777215;
-    }
+    /**
+     * @var int 16777215 will force "mediumtext" in mysql driver
+     *
+     * @config
+     */
+    private static $default_size = 16777215;
 
     public function getDBType()
     {
@@ -231,7 +232,7 @@ class DBText extends DBString
 
     public function scaffoldFormField($title = null, $params = null)
     {
-        if (!$this->nullifyEmpty) {
+        if (!$this->getNullifyEmpty()) {
             // Allow the user to select if it's null instead of automatically assuming empty string is
             return new NullableField(new TextareaField($this->name, $title));
         } else {
