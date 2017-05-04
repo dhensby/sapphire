@@ -37,6 +37,14 @@ class DBForeignKey extends DBInt
         parent::__construct($name);
     }
 
+    public function augmentDBTable($table) {
+        parent::augmentDBTable($table);
+
+        $table->addIndex([
+            $this->getName(),
+        ]);
+    }
+
     public function scaffoldFormField($title = null, $params = null)
     {
         if (empty($this->object)) {

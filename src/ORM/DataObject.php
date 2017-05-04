@@ -3092,6 +3092,23 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                 $field = DBField::create_field($fieldSpec[0], null, $fieldName);
                 $field->augmentDBTable($dbTable);
             }
+
+            if ($indexes) {
+                foreach ($indexes as $indexName => $indexSpec) {
+                    $flags = [];
+                    switch ($indexSpec['type']) {
+                        case 'unique':
+                            break;
+                        case 'fulltext':
+                            $flags['fulltext'] = true;
+                    }
+                    if ($indexSpec['type'] === 'unique') {
+                        $dbTable->addUniqueIndex($indexSpec['columns'], $indexName, $flags);
+                    } else {
+                        $dbTable->addIndex($indexSpec['columns'], $indexName, $flags);
+                    }
+                }
+            }
         }
 
         // Build any child tables for many_many items
