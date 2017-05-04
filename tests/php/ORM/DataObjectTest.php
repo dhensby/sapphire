@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use Doctrine\DBAL\Driver\AbstractMySQLDriver;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
 use SilverStripe\Dev\SapphireTest;
@@ -245,26 +246,29 @@ class DataObjectTest extends SapphireTest
     {
         // Test getting all records of a DataObject
         $comments = DataObject::get(DataObjectTest\TeamComment::class);
-        $this->assertEquals(3, $comments->count());
+        $this->assertCount(3, $comments);
 
         // Test WHERE clause
-        $comments = DataObject::get(DataObjectTest\TeamComment::class, "\"Name\"='Bob'");
-        $this->assertEquals(1, $comments->count());
+        $comments = DataObject::get(
+            DataObjectTest\TeamComment::class,
+            sprintf('%s = %s', Convert::symbol2sql('Name'), Convert::raw2sql('Bob'))
+        );
+        $this->assertCount(1, $comments);
         foreach ($comments as $comment) {
             $this->assertEquals('Bob', $comment->Name);
         }
 
         // Test sorting
-        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', "\"Name\" ASC");
-        $this->assertEquals(3, $comments->count());
+        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', sprintf('%s ASC', Convert::symbol2sql('Name')));
+        $this->assertCount(3, $comments);
         $this->assertEquals('Bob', $comments->first()->Name);
-        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', "\"Name\" DESC");
-        $this->assertEquals(3, $comments->count());
+        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', sprintf('%s DESC', Convert::symbol2sql('Name')));
+        $this->assertCount(3, $comments);
         $this->assertEquals('Phil', $comments->first()->Name);
 
         // Test limit
-        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', "\"Name\" ASC", '', '1,2');
-        $this->assertEquals(2, $comments->count());
+        $comments = DataObject::get(DataObjectTest\TeamComment::class, '', sprintf('%s ASC', Convert::symbol2sql('Name')), '', '1,2');
+        $this->assertCount(2, $comments);
         $this->assertEquals('Joe', $comments->first()->Name);
         $this->assertEquals('Phil', $comments->last()->Name);
 
@@ -276,18 +280,18 @@ class DataObjectTest extends SapphireTest
         // Test get_one() without caching
         $comment1 = DataObject::get_one(
             DataObjectTest\TeamComment::class,
-            array(
-            '"DataObjectTest_TeamComment"."Name"' => 'Joe'
-            ),
+            [
+                Convert::symbol2sql('DataObjectTest_TeamComment.Name') => 'Joe',
+            ],
             false
         );
         $comment1->Comment = "Something Else";
 
         $comment2 = DataObject::get_one(
             DataObjectTest\TeamComment::class,
-            array(
-            '"DataObjectTest_TeamComment"."Name"' => 'Joe'
-            ),
+            [
+                Convert::symbol2sql('DataObjectTest_TeamComment.Name') => 'Joe',
+            ],
             false
         );
         $this->assertNotEquals($comment1->Comment, $comment2->Comment);
@@ -295,33 +299,33 @@ class DataObjectTest extends SapphireTest
         // Test get_one() with caching
         $comment1 = DataObject::get_one(
             DataObjectTest\TeamComment::class,
-            array(
-            '"DataObjectTest_TeamComment"."Name"' => 'Bob'
-            ),
+            [
+                Convert::symbol2sql('DataObjectTest_TeamComment.Name') => 'Bob',
+            ],
             true
         );
         $comment1->Comment = "Something Else";
 
         $comment2 = DataObject::get_one(
             DataObjectTest\TeamComment::class,
-            array(
-            '"DataObjectTest_TeamComment"."Name"' => 'Bob'
-            ),
+            [
+                Convert::symbol2sql('DataObjectTest_TeamComment.Name') => 'Bob',
+            ],
             true
         );
         $this->assertEquals((string)$comment1->Comment, (string)$comment2->Comment);
 
         // Test get_one() with order by without caching
-        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', false, "\"Name\" ASC");
+        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', false, sprintf('%s ASC', Convert::symbol2sql('Name')));
         $this->assertEquals('Bob', $comment->Name);
 
-        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', false, "\"Name\" DESC");
+        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', false, sprintf('%s DESC', Convert::symbol2sql('Name')));
         $this->assertEquals('Phil', $comment->Name);
 
         // Test get_one() with order by with caching
-        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', true, '"Name" ASC');
+        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', true, sprintf('%s ASC', Convert::symbol2sql('Name')));
         $this->assertEquals('Bob', $comment->Name);
-        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', true, '"Name" DESC');
+        $comment = DataObject::get_one(DataObjectTest\TeamComment::class, '', true, sprintf('%s DESC', Convert::symbol2sql('Name')));
         $this->assertEquals('Phil', $comment->Name);
     }
 
@@ -330,15 +334,15 @@ class DataObjectTest extends SapphireTest
         // Test get_one() with bad case on the classname
         // Note: This will succeed only if the underlying DB server supports case-insensitive
         // table names (e.g. such as MySQL, but not SQLite3)
-        if (!(DB::get_conn() instanceof MySQLDatabase)) {
+        if (!(DB::get_conn()->getDriver() instanceof AbstractMySQLDriver)) {
             $this->markTestSkipped('MySQL only');
         }
 
         $subteam1 = DataObject::get_one(
             strtolower(DataObjectTest\SubTeam::class),
-            array(
-            '"DataObjectTest_Team"."Title"' => 'Subteam 1'
-            ),
+            [
+                Convert::symbol2sql('DataObjectTest_Team.Title') => 'Subteam 1',
+            ],
             true
         );
         $this->assertNotEmpty($subteam1);
@@ -440,14 +444,14 @@ class DataObjectTest extends SapphireTest
         $players = DataObject::get(DataObjectTest\Player::class);
 
         // There's 4 records in total
-        $this->assertEquals(4, $players->count());
+        $this->assertCount(4, $players);
 
         // Testing "##, ##" syntax
-        $this->assertEquals(4, $players->limit(20)->count());
-        $this->assertEquals(4, $players->limit(20, 0)->count());
-        $this->assertEquals(0, $players->limit(20, 20)->count());
-        $this->assertEquals(2, $players->limit(2, 0)->count());
-        $this->assertEquals(1, $players->limit(5, 3)->count());
+        $this->assertCount(4, $players->limit(20));
+        $this->assertCount(4, $players->limit(20, 0));
+        $this->assertCount(0, $players->limit(20, 20));
+        $this->assertCount(2, $players->limit(2, 0));
+        $this->assertCount(1, $players->limit(5, 3));
     }
 
     /**
@@ -462,7 +466,7 @@ class DataObjectTest extends SapphireTest
 
         // reload the page from the database
         $savedObj = DataObject::get_by_id(DataObjectTest\Player::class, $obj->ID);
-        $this->assertTrue($savedObj->FavouriteTeamID == 99);
+        $this->assertEquals(99, $savedObj->FavouriteTeamID);
 
         // Test with porymorphic relation
         $obj2 = $this->objFromFixture(DataObjectTest\Fan::class, "fan1");
