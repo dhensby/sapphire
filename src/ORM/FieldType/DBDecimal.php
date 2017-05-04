@@ -12,7 +12,7 @@ use SilverStripe\Forms\NumericField;
 class DBDecimal extends DBField
 {
 
-    protected $wholeSize, $decimalSize, $defaultValue;
+    protected $wholeSize, $decimalSize;
 
     /**
      * Create a new Decimal field.
@@ -27,7 +27,8 @@ class DBDecimal extends DBField
         $this->wholeSize = is_int($wholeSize) ? $wholeSize : 9;
         $this->decimalSize = is_int($decimalSize) ? $decimalSize : 2;
 
-        $this->defaultValue = number_format((float) $defaultValue, $decimalSize);
+        // @todo - should the default be null or 0.00?
+        $this->setDefaultValue(number_format((float) $defaultValue, $decimalSize));
 
         parent::__construct($name);
     }

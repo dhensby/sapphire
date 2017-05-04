@@ -138,7 +138,8 @@ abstract class DBComposite extends DBField
         foreach ($this->compositeDatabaseFields() as $fieldName => $fieldType) {
             /** @var DBField $field */
             $fieldSpec = Object::parse_class_spec($fieldType);
-            $field = DBField::create_field($fieldSpec[0], null, $this->getName() . $fieldName);
+            array_unshift($fieldSpec[1], $this->getName() . $fieldName);
+            $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
             $field->augmentDBTable($table);
         }
     }

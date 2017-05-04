@@ -7,6 +7,7 @@ use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataQuery;
 use SilverStripe\ORM\DB;
+use SilverStripe\ORM\Filters\ExactMatchFilter;
 use SilverStripe\Security\Member;
 
 /**
@@ -57,16 +58,36 @@ class DataQueryTest extends SapphireTest
     public function testJoins()
     {
         $dq = new DataQuery(Member::class);
-        $dq->innerJoin("Group_Members", "\"Group_Members\".\"MemberID\" = \"Member\".\"ID\"");
+        $dq->innerJoin(
+            "Group_Members",
+            sprintf('%s = %s',
+                Convert::symbol2sql('Group_Members.MemberID'),
+                Convert::symbol2sql('Member.ID')
+            )
+        );
         $this->assertSQLContains(
-            "INNER JOIN \"Group_Members\" ON \"Group_Members\".\"MemberID\" = \"Member\".\"ID\"",
+            sprintf('INNER JOIN %s ON %s = %s',
+                Convert::symbol2sql('Group_Members'),
+                Convert::symbol2sql('Group_Members.MemberID'),
+                Convert::symbol2sql('Member.ID')
+            ),
             $dq->sql($parameters)
         );
 
         $dq = new DataQuery(Member::class);
-        $dq->leftJoin("Group_Members", "\"Group_Members\".\"MemberID\" = \"Member\".\"ID\"");
+        $dq->leftJoin(
+            "Group_Members",
+            sprintf('%s = %s',
+                Convert::symbol2sql('Group_Members.MemberID'),
+                Convert::symbol2sql('Member.ID')
+            )
+        );
         $this->assertSQLContains(
-            "LEFT JOIN \"Group_Members\" ON \"Group_Members\".\"MemberID\" = \"Member\".\"ID\"",
+            sprintf('LEFT JOIN %s ON %s = %s',
+                Convert::symbol2sql('Group_Members'),
+                Convert::symbol2sql('Group_Members.MemberID'),
+                Convert::symbol2sql('Member.ID')
+            ),
             $dq->sql($parameters)
         );
     }
@@ -77,12 +98,12 @@ class DataQueryTest extends SapphireTest
         $dq = new DataQuery(DataQueryTest\ObjectB::class);
         $dq->applyRelation('TestC');
         $this->assertTrue($dq->query()->isJoinedTo('testc_DataQueryTest_C'));
-        $this->assertContains('"testc_DataQueryTest_C"."ID" = "DataQueryTest_B"."TestCID"', $dq->sql());
+        $this->assertContains(sprintf('%s = %s', Convert::symbol2sql('testc_DataQueryTest_C.ID'), Convert::symbol2sql('DataQueryTest_B.TestCID')), $dq->sql());
 
         $dq = new DataQuery(DataQueryTest\ObjectB::class);
         $dq->applyRelation('TestCTwo');
         $this->assertTrue($dq->query()->isJoinedTo('testctwo_DataQueryTest_C'));
-        $this->assertContains('"testctwo_DataQueryTest_C"."ID" = "DataQueryTest_B"."TestCTwoID"', $dq->sql());
+        $this->assertContains(sprintf('%s = %s', Convert::symbol2sql('testctwo_DataQueryTest_C.ID'), Convert::symbol2sql('DataQueryTest_B.TestCTwoID')), $dq->sql());
     }
 
     public function testApplyReplationDeepInheretence()
@@ -92,7 +113,7 @@ class DataQueryTest extends SapphireTest
         //apply a relation to a relation from an ancestor class
         $newDQ->applyRelation('TestA');
         $this->assertTrue($newDQ->query()->isJoinedTo('DataQueryTest_C'));
-        $this->assertContains('"testa_DataQueryTest_A"."ID" = "DataQueryTest_C"."TestAID"', $newDQ->sql($params));
+        $this->assertContains(sprintf('%s = %s', Convert::symbol2sql('testa_DataQueryTest_A.ID'), Convert::symbol2sql('DataQueryTest_C.TestAID')), $newDQ->sql($params));
 
         //test many_many relation
 
@@ -103,7 +124,7 @@ class DataQueryTest extends SapphireTest
         //check we are "joined" to the DataObject's table (there is no distinction between FROM or JOIN clauses)
         $this->assertTrue($newDQ->query()->isJoinedTo($baseDBTable));
         //check we are explicitly selecting "FROM" the DO's table
-        $this->assertContains("FROM \"$baseDBTable\"", $newDQ->sql());
+        $this->assertContains(sprintf('FROM %s', Convert::symbol2sql($baseDBTable)), $newDQ->sql());
 
         //test many_many with shared inheritance
         $newDQ = new DataQuery(DataQueryTest\ObjectE::class);
@@ -111,15 +132,15 @@ class DataQueryTest extends SapphireTest
         //check we are "joined" to the DataObject's table (there is no distinction between FROM or JOIN clauses)
         $this->assertTrue($newDQ->query()->isJoinedTo($baseDBTable));
         //check we are explicitly selecting "FROM" the DO's table
-        $this->assertContains("FROM \"$baseDBTable\"", $newDQ->sql(), 'The FROM clause is missing from the query');
+        $this->assertContains(sprintf('FROM %s', Convert::symbol2sql($baseDBTable)), $newDQ->sql(), 'The FROM clause is missing from the query');
         $newDQ->applyRelation('ManyTestGs');
         //confirm we are still joined to the base table
         $this->assertTrue($newDQ->query()->isJoinedTo($baseDBTable));
         //double check it is the "FROM" clause
-        $this->assertContains("FROM \"$baseDBTable\"", $newDQ->sql(), 'The FROM clause has been removed from the query');
+        $this->assertContains(sprintf('FROM %s', Convert::symbol2sql($baseDBTable)), $newDQ->sql(), 'The FROM clause has been removed from the query');
         //another (potentially less crude check) for checking "FROM" clause
         $fromTables = $newDQ->query()->getFrom();
-        $this->assertEquals('"' . $baseDBTable . '"', $fromTables[$baseDBTable]);
+        $this->assertEquals(Convert::symbol2sql($baseDBTable), $fromTables[$baseDBTable]);
     }
 
     public function testRelationReturn()
@@ -245,8 +266,8 @@ class DataQueryTest extends SapphireTest
 
         $orgDq = clone $dq;
 
-        $subDq->sort('"DataQueryTest_A"."Name"');
-        $orgDq->sort('"DataQueryTest_A"."Name"');
+        $subDq->sort('DataQueryTest_A.Name');
+        $orgDq->sort('DataQueryTest_A.Name');
 
         $this->assertSQLEquals($dq->sql($parameters), $orgDq->sql($parameters));
 
@@ -259,9 +280,9 @@ class DataQueryTest extends SapphireTest
     public function testOrderByMultiple()
     {
         $dq = new DataQuery(SQLSelectTest\TestObject::class);
-        $dq = $dq->sort('"Name" ASC, MID("Name", 8, 1) DESC');
+        $dq = $dq->sort(sprintf('%s ASC, MID(%s, 8, 1) DESC', Convert::symbol2sql('Name'), Convert::symbol2sql('Name')));
         $this->assertContains(
-            'ORDER BY "SQLSelectTest_DO"."Name" ASC, "_SortColumn0" DESC',
+            sprintf('ORDER BY %s ASC, _SortColumn0 DESC', Convert::symbol2sql('SQLSelectTest_DO.Name')),
             $dq->sql($parameters)
         );
     }
@@ -296,7 +317,6 @@ class DataQueryTest extends SapphireTest
         $query = new DataQuery(DataQueryTest\ObjectF::class);
         $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('SortOrder'), '2'));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find SortOrder");
-        static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateFull()
@@ -308,9 +328,8 @@ class DataQueryTest extends SapphireTest
             Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
         ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988-03-04%')));
+        $query->where(DB::get_conn()->getExpressionBuilder()->like(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988-03-04%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
-        static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateStartsWith()
@@ -322,9 +341,8 @@ class DataQueryTest extends SapphireTest
             Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
         ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988%')));
+        $query->where(DB::get_conn()->getExpressionBuilder()->like(Convert::symbol2sql('MyDate'), Convert::raw2sql('1988%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
-        static::resetDBSchema(true);
     }
 
     public function testComparisonClauseDateStartsPartial()
@@ -336,9 +354,8 @@ class DataQueryTest extends SapphireTest
             Convert::symbol2sql('MyDate') => Convert::raw2sql('1988-03-04 06:30'),
         ))->execute();
         $query = new DataQuery(DataQueryTest\ObjectF::class);
-        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyDate'), Convert::raw2sql('%03-04%')));
+        $query->where(DB::get_conn()->getExpressionBuilder()->like(Convert::symbol2sql('MyDate'), Convert::raw2sql('%03-04%')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyDate");
-        static::resetDBSchema(true);
     }
 
     public function testComparisonClauseTextCaseInsensitive()
@@ -352,7 +369,6 @@ class DataQueryTest extends SapphireTest
         $query = new DataQuery(DataQueryTest\ObjectF::class);
         $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('helloworld')));
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyString");
-        static::resetDBSchema(true);
     }
 
     public function testComparisonClauseTextCaseSensitive()
@@ -366,15 +382,14 @@ class DataQueryTest extends SapphireTest
         $query = new DataQuery(DataQueryTest\ObjectF::class);
         // @todo - this used to use `comparisonClause` method but that's been replaced with
         // `generateComparisonClause` on SearchFilter instead
-        $query->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('HelloWorld'),
-            false, false, true));
+        $comparisonClause = (new ExactMatchFilter)->generateComparisonClause('MyString', true, false, true);
+        $query->where([$comparisonClause => 'HelloWorld']);
         $this->assertGreaterThan(0, $query->count(), "Couldn't find MyString");
 
         $query2 = new DataQuery(DataQueryTest\ObjectF::class);
-        $query2->where(DB::get_conn()->getExpressionBuilder()->eq(Convert::symbol2sql('MyString'), Convert::raw2sql('helloworld'),
-            false, false, true));
+        $comparisonClause = (new ExactMatchFilter)->generateComparisonClause('MyString', true, false, false);
+        $query2->where([$comparisonClause => 'helloworld']);
         $this->assertEquals(0, $query2->count(), "Found mystring. Shouldn't be able too.");
-        static::resetDBSchema(true);
     }
 
     /**
@@ -398,13 +413,11 @@ class DataQueryTest extends SapphireTest
         // Including filter on sub-table requires it
         $query = new DataQuery(DataQueryTest\ObjectC::class);
         $query->sort('SortOrder');
-        $query->where(
-            array(
-                'DataQueryTest_C.Title = ? OR DataQueryTest_E.SortOrder > ?' => array(
-                    'First', 2
-                )
-            )
-        );
+        $query->where([
+            sprintf('%s = ? OR %s > ?', Convert::symbol2sql('DataQueryTest_C.Title'), Convert::symbol2sql('DataQueryTest_E.SortOrder')) => [
+                'First', 2
+            ]
+        ]);
         $result = $query->getFinalisedQuery(array('Title'));
         $from = $result->getFrom();
 

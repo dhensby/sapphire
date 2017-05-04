@@ -121,7 +121,7 @@ abstract class SearchFilter
             }
         } else {
             if ($negate) {
-                if ($caseSensitive !== false) {
+                if ($caseSensitive === false) {
                     return $eb->notLike($quotedField, '?');
                 } else {
                     return $eb->notLike($field, 'BINARY ?');
