@@ -12,7 +12,7 @@ class FulltextFilterTest extends SapphireTest
 {
 
     protected static $extra_dataobjects = array(
-        TestObject::class
+        TestObject::class,
     );
 
     protected static $fixture_file = "FulltextFilterTest.yml";
