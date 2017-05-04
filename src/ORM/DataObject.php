@@ -3294,6 +3294,8 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         $table = $schema->tableName(static::class);
         $fields = $schema->databaseFields(static::class, false);
         $indexes = $schema->databaseIndexes(static::class, false);
+
+        // @todo - DB extensions are "experimental" only work in postgres. these could be removed?
         $extensions = self::database_extensions(static::class);
         $legacyTables = $schema->getLegacyTableNames(static::class);
 
@@ -3328,7 +3330,8 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             foreach ($fields as $fieldName => $fieldType) {
                 /** @var DBField $field */
                 $fieldSpec = Object::parse_class_spec($fieldType);
-                $field = DBField::create_field($fieldSpec[0], null, $fieldName);
+                array_unshift($fieldSpec[1], $fieldName);
+                $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
                 $field->augmentDBTable($dbTable);
             }
 
@@ -3395,7 +3398,8 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                 foreach ($manymanyFields as $fieldName => $fieldType) {
                     /** @var DBField $field */
                     $fieldSpec = Object::parse_class_spec($fieldType);
-                    $field = DBField::create_field($fieldSpec[0], null, $fieldName);
+                    array_unshift($fieldSpec[1], $fieldName);
+                    $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
                     $field->augmentDBTable($linkTable);
                 }
 

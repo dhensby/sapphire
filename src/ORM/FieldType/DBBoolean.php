@@ -15,7 +15,7 @@ class DBBoolean extends DBField
 
     public function __construct($name = null, $defaultVal = 0)
     {
-        $this->defaultVal = ($defaultVal) ? 1 : 0;
+        $this->setDefaultValue(($defaultVal) ? 1 : 0);
 
         parent::__construct($name);
     }

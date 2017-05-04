@@ -20,8 +20,8 @@ class ObjectC extends DataObject implements TestOnly
 
     private static $has_many = array(
         'TestAs' => ObjectA::class,
-        'TestBs' => 'SilverStripe\\ORM\\Tests\\DataQueryTest\\ObjectB.TestC',
-        'TestBsTwo' => 'SilverStripe\\ORM\\Tests\\DataQueryTest\\ObjectB.TestCTwo',
+        'TestBs' => ObjectB::class . '.TestC',
+        'TestBsTwo' => ObjectB::class . '.TestCTwo',
     );
 
     private static $many_many = array(
