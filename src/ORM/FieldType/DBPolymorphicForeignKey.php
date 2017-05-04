@@ -88,4 +88,10 @@ class DBPolymorphicForeignKey extends DBComposite
         }
         return null;
     }
+
+    public function augmentDBTable($table)
+    {
+        // @todo - should this add an index?
+        return parent::augmentDBTable($table);
+    }
 }
