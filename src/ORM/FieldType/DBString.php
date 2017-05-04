@@ -48,6 +48,8 @@ abstract class DBString extends DBField
             $this->setOptions($options);
         }
 
+        $size = $size ?: $this->config()->default_size;
+
         if ($size) {
             $this->setSize($size);
         }
@@ -66,7 +68,7 @@ abstract class DBString extends DBField
      */
     public function getSize()
     {
-        return $this->size ?: $this->config()->default_size;
+        return $this->size;
     }
 
     public function setSize($size)
@@ -86,7 +88,7 @@ abstract class DBString extends DBField
     public function getDBOptions()
     {
         return parent::getDBOptions() + [
-            'precision' => $this->getSize(),
+            'length' => $this->getSize(),
         ];
     }
 
