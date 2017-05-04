@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Filters;
 
 use SilverStripe\Core\Convert;
+use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DataQuery;
 use SilverStripe\ORM\DataObject;
 use Exception;
