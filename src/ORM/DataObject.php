@@ -3339,12 +3339,16 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                         case 'unique':
                             break;
                         case 'fulltext':
-                            $flags['fulltext'] = true;
+                            $flags[] = 'fulltext';
+                            break;
                     }
                     if ($indexSpec['type'] === 'unique') {
                         $dbTable->addUniqueIndex($indexSpec['columns'], $indexName, $flags);
                     } else {
                         $dbTable->addIndex($indexSpec['columns'], $indexName, $flags);
+                    }
+                    if (in_array('fulltext', $flags)) {
+                        $dbTable->addOption('engine', 'MyISAM');
                     }
                 }
             }
