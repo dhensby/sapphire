@@ -33,7 +33,7 @@ class GroupCsvBulkLoaderTest extends SapphireTest
         $results = $loader->load(__DIR__ . '/GroupCsvBulkLoaderTest/GroupCsvBulkLoaderTest.csv');
 
         $created = $results->Created()->toArray();
-        $this->assertEquals(count($created), 1);
+        $this->assertCount(1, $created);
         $this->assertEquals($created[0]->Code, 'newchildgroup1');
 
         $updated = $results->Updated()->toArray();

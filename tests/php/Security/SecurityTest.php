@@ -675,10 +675,14 @@ class SecurityTest extends FunctionalTest
 
         // Assumption: The database has been built correctly by the test runner,
         // and has all columns present in the ORM
-        /**
-         * @skipUpgrade
-         */
-        DB::get_schema()->renameField('Member', 'Email', 'Email_renamed');
+        $schema = DB::get_conn()->getSchemaManager()->createSchema();
+        $newSchema = clone $schema;
+        $tableName = Member::getSchema()->tableForField(Member::class, 'Email');
+        $newSchema->getTable($tableName)->dropColumn('Email');
+
+        foreach($schema->getMigrateToSql($newSchema, DB::get_conn()->getDatabasePlatform()) as $sql) {
+            DB::get_conn()->executeQuery($sql);
+        }
 
         // Email column is now missing, which means we're not ready to do permission checks
         $this->assertFalse(Security::database_is_ready());

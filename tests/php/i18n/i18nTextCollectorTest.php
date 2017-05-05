@@ -4,6 +4,7 @@ namespace SilverStripe\i18n\Tests;
 
 use PHPUnit\Framework\Error\Notice;
 use SilverStripe\Assets\Filesystem;
+use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\i18n\i18n;
@@ -591,6 +592,10 @@ PHP;
 
     public function testCollectFromEntityProvidersInCustomObject()
     {
+
+        if (!ClassInfo::exists('SilverStripe\\Admin\\LeftAndMain')) {
+            $this->markTestSkipped('Admin module required');
+        }
         // note: Disable _fakewebroot manifest for this test
         $this->popManifests();
 

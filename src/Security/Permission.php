@@ -3,6 +3,7 @@
 namespace SilverStripe\Security;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\PDOConnection;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Resettable;
@@ -487,12 +488,9 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
             return new ArrayList();
         }
 
-        $groupClause = DB::placeholders($groupIDs);
         /** @skipUpgrade */
         $members = Member::get()
-            ->where(array("\"Group\".\"ID\" IN ($groupClause)" => $groupIDs))
-            ->leftJoin("Group_Members", '"Member"."ID" = "Group_Members"."MemberID"')
-            ->leftJoin("Group", '"Group_Members"."GroupID" = "Group"."ID"');
+            ->filter(['Groups.ID' => $groupIDs]);
 
         return $members;
     }
@@ -622,7 +620,13 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
                 $flatCodeArray[] = $code;
             }
         }
-        $otherPerms = DB::query("SELECT DISTINCT \"Code\" From \"Permission\" WHERE \"Code\" != ''")->column();
+
+        $schema = static::getSchema();
+        $qb = DB::get_conn()->createQueryBuilder();
+        $query = $qb->select('Code')
+            ->from($schema->tableForField(static::class, 'Code'))
+            ->where($qb->expr()->neq('Code', $qb->createPositionalParameter('')));
+        $otherPerms = $query->execute()->fetch(\PDO::FETCH_ASSOC);
 
         if ($otherPerms) {
             foreach ($otherPerms as $otherPerm) {
