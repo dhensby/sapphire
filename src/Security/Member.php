@@ -538,7 +538,7 @@ class Member extends DataObject
             $token = $generator->randomToken();
             $hash = $this->encryptWithUserSettings($token);
         } while (DataObject::get_one(Member::class, array(
-            '"Member"."AutoLoginHash"' => $hash
+            Convert::symbol2sql('Member.AutoLoginHash') => $hash,
         )));
 
         $this->AutoLoginHash = $hash;

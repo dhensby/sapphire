@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Security\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Group;
 use SilverStripe\Security\Permission;
@@ -57,58 +58,58 @@ class PermissionCheckboxSetFieldTest extends SapphireTest
         $field->saveInto($group);
         $group->flushCache();
         $untouchable->flushCache();
-        $this->assertEquals($group->Permissions()->count(), 0, 'The tested group has no permissions');
+        $this->assertCount(0, $group->Permissions(), 'The tested group has no permissions');
 
-        $this->assertEquals($untouchable->Permissions()->count(), 1, 'The other group has one permission');
-        $this->assertEquals(
-            $untouchable->Permissions()->where("\"Code\"='ADMIN'")->count(),
+        $this->assertCount(1, $untouchable->Permissions(), 'The other group has one permission');
+        $this->assertCount(
             1,
+            $untouchable->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('ADMIN'))),
             'The other group has ADMIN permission'
         );
 
-        $this->assertEquals(DataObject::get(Permission::class)->count(), $baseCount, 'There are no orphaned permissions');
+        $this->assertCount($baseCount, DataObject::get(Permission::class), 'There are no orphaned permissions');
 
         // add some permissions
         $field->setValue(
             array(
-            'ADMIN'=>true,
-            'NON-ADMIN'=>true
+                'ADMIN'=>true,
+                'NON-ADMIN'=>true
             )
         );
 
         $field->saveInto($group);
         $group->flushCache();
         $untouchable->flushCache();
-        $this->assertEquals(
-            $group->Permissions()->count(),
+        $this->assertCount(
             2,
+            $group->Permissions(),
             'The tested group has two permissions permission'
         );
         $this->assertEquals(
-            $group->Permissions()->where("\"Code\"='ADMIN'")->count(),
             1,
+            $group->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('ADMIN')))->count(),
             'The tested group has ADMIN permission'
         );
         $this->assertEquals(
-            $group->Permissions()->where("\"Code\"='NON-ADMIN'")->count(),
             1,
+            $group->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('NON-ADMIN')))->count(),
             'The tested group has CMS_ACCESS_AssetAdmin permission'
         );
 
         $this->assertEquals(
-            $untouchable->Permissions()->count(),
             1,
+            $untouchable->Permissions()->count(),
             'The other group has one permission'
         );
         $this->assertEquals(
-            $untouchable->Permissions()->where("\"Code\"='ADMIN'")->count(),
             1,
+            $untouchable->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('ADMIN')))->count(),
             'The other group has ADMIN permission'
         );
 
         $this->assertEquals(
-            DataObject::get(Permission::class)->count(),
             $baseCount+2,
+            DataObject::get(Permission::class)->count(),
             'There are no orphaned permissions'
         );
 
@@ -123,30 +124,30 @@ class PermissionCheckboxSetFieldTest extends SapphireTest
         $group->flushCache();
         $untouchable->flushCache();
         $this->assertEquals(
-            $group->Permissions()->count(),
             1,
+            $group->Permissions()->count(),
             'The tested group has 1 permission'
         );
         $this->assertEquals(
-            $group->Permissions()->where("\"Code\"='ADMIN'")->count(),
             1,
+            $group->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('ADMIN')))->count(),
             'The tested group has ADMIN permission'
         );
 
         $this->assertEquals(
-            $untouchable->Permissions()->count(),
             1,
+            $untouchable->Permissions()->count(),
             'The other group has one permission'
         );
         $this->assertEquals(
-            $untouchable->Permissions()->where("\"Code\"='ADMIN'")->count(),
             1,
+            $untouchable->Permissions()->where(sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('ADMIN')))->count(),
             'The other group has ADMIN permission'
         );
 
         $this->assertEquals(
-            DataObject::get(Permission::class)->count(),
             $baseCount+1,
+            DataObject::get(Permission::class)->count(),
             'There are no orphaned permissions'
         );
     }

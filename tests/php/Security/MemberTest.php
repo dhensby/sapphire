@@ -171,8 +171,11 @@ class MemberTest extends FunctionalTest
         $member->Password = "test3";
         $member->write();
 
-        $passwords = DataObject::get(MemberPassword::class, "\"MemberID\" = $member->ID", "\"Created\" DESC, \"ID\" DESC")
-            ->getIterator();
+        $passwords = DataObject::get(
+            MemberPassword::class,
+            sprintf('%s = %s', Convert::symbol2sql('MemberID'), Convert::raw2sql($member->ID)),
+            sprintf('%s DESC, %s DESC', Convert::symbol2sql('Created'), Convert::symbol2sql('ID'))
+        )->getIterator();
         $this->assertNotNull($passwords);
         $passwords->rewind();
         $this->assertTrue($passwords->current()->checkPassword('test3'), "Password test3 not found in MemberRecord");
@@ -261,9 +264,7 @@ class MemberTest extends FunctionalTest
      */
     public function testValidatePassword()
     {
-        /**
- * @var Member $member
-*/
+        /** @var Member $member */
         $member = $this->objFromFixture(Member::class, 'test');
         $this->assertNotNull($member);
 
@@ -285,7 +286,7 @@ class MemberTest extends FunctionalTest
         $this->assertTrue($result->isValid());
 
         // Clear out the MemberPassword table to ensure that the system functions properly in that situation
-        DB::query("DELETE FROM \"MemberPassword\"");
+        DB::query(sprintf('DELETE FROM %s', Convert::symbol2sql('MemberPassword')));
 
         // GOOD PASSWORDS
 
@@ -434,9 +435,9 @@ class MemberTest extends FunctionalTest
         /** @var Group $group */
         $group = DataObject::get_one(
             Group::class,
-            array(
-            '"Group"."Code"' => 'somegroupthatwouldneverexist'
-            )
+            [
+                Convert::symbol2sql('Group.Code') => 'somegroupthatwouldneverexist',
+            ]
         );
         $this->assertNotNull($group);
         $this->assertEquals($group->Code, 'somegroupthatwouldneverexist');
@@ -462,7 +463,9 @@ class MemberTest extends FunctionalTest
         $this->assertEquals($grouplessMember->Groups()->count(), 2);
 
         /** @var Group $group */
-        $group = DataObject::get_one(Group::class, "\"Code\" = 'somegroupthatwouldneverexist'");
+        $group = DataObject::get_one(Group::class,
+            sprintf('%s = %s', Convert::symbol2sql('Code'), Convert::raw2sql('somegroupthatwouldneverexist'))
+        );
         $this->assertNotNull($group);
         $this->assertEquals($group->Code, 'somegroupthatwouldneverexist');
         $this->assertEquals($group->Title, 'New Group');

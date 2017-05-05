@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Security\Tests;
 
+use SilverStripe\Core\ClassInfo;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\PermissionCheckboxSetField;
@@ -12,6 +13,14 @@ class PermissionTest extends SapphireTest
 {
 
     protected static $fixture_file = 'PermissionTest.yml';
+
+    protected function setUp()
+    {
+        parent::setUp();
+        if (!ClassInfo::exists('Page')) {
+            $this->markTestSkipped('CMS module required for this test');
+        }
+    }
 
     public function testGetCodesGrouped()
     {

@@ -563,14 +563,14 @@ class SecurityTest extends FunctionalTest
         $attempt = DataObject::get_one(
             LoginAttempt::class,
             array(
-                '"LoginAttempt"."Email"' => 'testuser@example.com'
+            Convert::symbol2sql('LoginAttempt.Email') => 'testuser@example.com',
             )
         );
         $this->assertTrue(is_object($attempt));
         $member = DataObject::get_one(
             Member::class,
             array(
-                '"Member"."Email"' => 'testuser@example.com'
+            Convert::symbol2sql('Member.Email') => 'testuser@example.com',
             )
         );
         $this->assertEquals($attempt->Status, 'Failure');
@@ -582,7 +582,7 @@ class SecurityTest extends FunctionalTest
         $attempt = DataObject::get_one(
             LoginAttempt::class,
             array(
-            '"LoginAttempt"."Email"' => 'wronguser@silverstripe.com'
+                Convert::symbol2sql('LoginAttempt.Email') => 'wronguser@silverstripe.com',
             )
         );
         $this->assertTrue(is_object($attempt));
@@ -600,13 +600,13 @@ class SecurityTest extends FunctionalTest
         $attempt = DataObject::get_one(
             LoginAttempt::class,
             array(
-            '"LoginAttempt"."Email"' => 'testuser@example.com'
+                Convert::symbol2sql('LoginAttempt.Email') => 'testuser@example.com',
             )
         );
         $member = DataObject::get_one(
             Member::class,
             array(
-            '"Member"."Email"' => 'testuser@example.com'
+                Convert::symbol2sql('Member.Email') => 'testuser@example.com',
             )
         );
         $this->assertTrue(is_object($attempt));
@@ -622,10 +622,14 @@ class SecurityTest extends FunctionalTest
 
         // Assumption: The database has been built correctly by the test runner,
         // and has all columns present in the ORM
-        /**
-         * @skipUpgrade
-         */
-        DB::get_schema()->renameField('Member', 'Email', 'Email_renamed');
+        $schema = DB::get_conn()->getSchemaManager()->createSchema();
+        $newSchema = clone $schema;
+        $tableName = Member::getSchema()->tableForField(Member::class, 'Email');
+        $newSchema->getTable($tableName)->dropColumn('Email');
+
+        foreach($schema->getMigrateToSql($newSchema, DB::get_conn()->getDatabasePlatform()) as $sql) {
+            DB::get_conn()->executeQuery($sql);
+        }
 
         // Email column is now missing, which means we're not ready to do permission checks
         $this->assertFalse(Security::database_is_ready());

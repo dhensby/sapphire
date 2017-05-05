@@ -68,7 +68,7 @@ class SecurityDefaultAdminTest extends SapphireTest
     public function testFindAnAdministratorCreatesNewUser()
     {
         $adminMembers = Permission::get_members_by_permission('ADMIN');
-        $this->assertEquals(0, $adminMembers->count());
+        $this->assertCount(0, $adminMembers);
 
         $admin = DefaultAdminService::singleton()->findOrCreateDefaultAdmin();
 
