@@ -38,14 +38,14 @@ matrix:
       env:
        - DB=MYSQL
        - BEHAT_TEST=framework
-    - php: 5.6
-      env:
-        - DB=MYSQL
-        - PHPUNIT_TEST=cms
-    - php: 5.6
-      env:
-        - DB=MYSQL
-        - BEHAT_TEST=cms
+#    - php: 5.6
+#      env:
+#        - DB=MYSQL
+#        - PHPUNIT_TEST=cms
+#    - php: 5.6
+#      env:
+#        - DB=MYSQL
+#        - BEHAT_TEST=cms
 
 before_script:
 # Init PHP
@@ -60,9 +60,14 @@ before_script:
   - composer self-update --snapshot
 
 # Install composer dependencies
+  - composer config prefer-stable false
+  - composer config repositories.admin vcs https://github.com/dhensby/silverstripe-admin
+  - composer config repositories.assets vcs https://github.com/dhensby/silverstripe-assets
+  - composer config repositories.versioned vcs https://github.com/dhensby/silverstripe-versioned
   - composer validate
   - composer install --prefer-dist
-  - composer require silverstripe/config:1.0.x-dev silverstripe/admin:1.0.x-dev silverstripe/assets:1.0.x-dev silverstripe/versioned:1.0.x-dev --prefer-dist
+  - composer require silverstripe/assets:'dev-pulls/4/dbal as 1.0.x-dev'
+  - composer require silverstripe/versioned:'dev-pulls/4/dbal as 1.0.x-dev'
   - if [[ $PHPUNIT_TEST == cms ]] || [[ $BEHAT_TEST == cms ]]; then composer require silverstripe/cms:4.0.x-dev silverstripe/campaign-admin:1.0.x-dev silverstripe/siteconfig:4.0.x-dev silverstripe/reports:4.0.x-dev --prefer-dist; fi
 
 # Bootstrap dependencies
