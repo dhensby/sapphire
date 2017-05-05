@@ -571,7 +571,7 @@ class SQLSelect extends SQLConditionalExpression
         // we can't clear the select if we're relying on its output by a HAVING clause
         if (count($this->having)) {
             $records = $this->execute();
-            return $records->numRecords();
+            return $records->rowCount();
         }
 
         $clone = clone $this;
