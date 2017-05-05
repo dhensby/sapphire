@@ -18,7 +18,7 @@ class TransactionTest extends SapphireTest
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        if (!DB::get_conn()->supportsTransactions()) {
+        if (!DB::get_conn()->getDatabasePlatform()->supportsTransactions()) {
             static::markTestSkipped('Current database does not support transactions');
         }
     }
@@ -27,14 +27,14 @@ class TransactionTest extends SapphireTest
     {
         $this->assertCount(0, TestObject::get());
         try {
-            DB::get_conn()->withTransaction(function () {
+            DB::get_conn()->transactional(function () {
                 $obj = TransactionTest\TestObject::create();
                 $obj->Title = 'Test';
                 $obj->write();
 
                 $this->assertCount(1, TestObject::get());
 
-                DB::get_conn()->withTransaction(function () {
+                DB::get_conn()->transactional(function () {
                     $obj = TransactionTest\TestObject::create();
                     $obj->Title = 'Test2';
                     $obj->write();
