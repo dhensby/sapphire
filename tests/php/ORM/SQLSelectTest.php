@@ -2,6 +2,8 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use Doctrine\DBAL\Driver\AbstractMySQLDriver;
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Connect\MySQLDatabase;
 use SilverStripe\ORM\Queries\SQLSelect;
@@ -18,7 +20,7 @@ class SQLSelectTest extends SapphireTest
     protected static $extra_dataobjects = array(
         SQLSelectTest\TestObject::class,
         SQLSelectTest\TestBase::class,
-        SQLSelectTest\TestChild::class
+        SQLSelectTest\TestChild::class,
     );
 
     protected $oldDeprecation = null;
@@ -41,7 +43,7 @@ class SQLSelectTest extends SapphireTest
         //basic counting
         $qry = SQLSelectTest\TestObject::get()->dataQuery()->getFinalisedQuery();
         $ids = $this->allFixtureIDs(SQLSelectTest\TestObject::class);
-        $count = $qry->count('"SQLSelectTest_DO"."ID"');
+        $count = $qry->count(Convert::symbol2sql('SQLSelectTest_DO.ID'));
         $this->assertEquals(count($ids), $count);
         $this->assertInternalType("int", $count);
         //test with `having`
@@ -63,7 +65,7 @@ class SQLSelectTest extends SapphireTest
         $qry = SQLSelectTest\TestObject::get()->dataQuery()->getFinalisedQuery();
         $ids = $this->allFixtureIDs(SQLSelectTest\TestObject::class);
         $qry->setLimit(1);
-        $count = $qry->unlimitedRowCount('"SQLSelectTest_DO"."ID"');
+        $count = $qry->unlimitedRowCount(Convert::symbol2sql('SQLSelectTest_DO.ID'));
         $this->assertEquals(count($ids), $count);
         $this->assertInternalType("int", $count);
         // Test without column - SQLSelect has different logic for this
@@ -71,9 +73,9 @@ class SQLSelectTest extends SapphireTest
         $this->assertEquals(2, $count);
         $this->assertInternalType("int", $count);
         //test with `having`
-        if (DB::get_conn() instanceof MySQLDatabase) {
+        if (DB::get_conn()->getDriver() instanceof AbstractMySQLDriver) {
             $qry->setHaving('"Date" > 2012-02-01');
-            $count = $qry->unlimitedRowCount('"SQLSelectTest_DO"."ID"');
+            $count = $qry->unlimitedRowCount(Convert::symbol2sql('SQLSelectTest_DO.ID'));
             $this->assertEquals(1, $count);
             $this->assertInternalType("int", $count);
         }

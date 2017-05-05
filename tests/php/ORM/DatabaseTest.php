@@ -2,6 +2,9 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use Doctrine\DBAL\Driver\AbstractMySQLDriver;
+use Doctrine\DBAL\Driver\PDOConnection;
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Connect\MySQLDatabase;
 use SilverStripe\MSSQL\MSSQLDatabase;
@@ -66,17 +69,18 @@ class DatabaseTest extends SapphireTest
 
     public function testMySQLCreateTableOptions()
     {
-        if (!(DB::get_conn() instanceof MySQLDatabase)) {
+        if (!(DB::get_conn()->getDriver() instanceof AbstractMySQLDriver)) {
             $this->markTestSkipped('MySQL only');
         }
 
 
         $ret = DB::query(
             sprintf(
-                'SHOW TABLE STATUS WHERE "Name" = \'%s\'',
-                'DatabaseTest_MyObject'
+                'SHOW TABLE STATUS WHERE %s = %s',
+                Convert::symbol2sql('Name'),
+                Convert::raw2sql('DatabaseTest_MyObject')
             )
-        )->first();
+        )->fetch(PDOConnection::FETCH_ASSOC);
         $this->assertEquals(
             $ret['Engine'],
             'InnoDB',
