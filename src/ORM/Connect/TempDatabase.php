@@ -145,7 +145,11 @@ class TempDatabase
 
         $dbConn->getSchemaManager()->createDatabase($dbname);
 
-        $dbConn->query(sprintf('USE %s', Convert::symbol2sql($dbname)));
+        $dbConn->close();
+
+        $config = DB::getConfig($this->name);
+        $config['dbname'] = $dbname;
+        DB::setConfig($this->name, $config);
 
         $this->resetDBSchema();
 
