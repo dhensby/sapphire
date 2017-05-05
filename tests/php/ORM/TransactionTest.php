@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Tests;
 
+use SilverStripe\Core\Convert;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Dev\SapphireTest;
@@ -10,42 +11,55 @@ class TransactionTest extends SapphireTest
 {
 
     protected static $extra_dataobjects = array(
-        TransactionTest\TestObject::class
+        TransactionTest\TestObject::class,
     );
 
     public function testCreateWithTransaction()
     {
 
-        if (DB::get_conn()->supportsTransactions()==true) {
-            DB::get_conn()->transactionStart();
-            $obj=new TransactionTest\TestObject();
-            $obj->Title='First page';
+        if (DB::get_conn()->getDatabasePlatform()->supportsTransactions()) {
+            $conn = DB::get_conn();
+            $conn->beginTransaction();
+
+            $obj = new TransactionTest\TestObject();
+            $obj->Title = 'First page';
             $obj->write();
 
-            $obj=new TransactionTest\TestObject();
-            $obj->Title='Second page';
+            $obj = new TransactionTest\TestObject();
+            $obj->Title = 'Second page';
             $obj->write();
 
-            //Create a savepoint here:
-            DB::get_conn()->transactionSavepoint('rollback');
+            $conn->commit();
 
-            $obj=new TransactionTest\TestObject();
-            $obj->Title='Third page';
+            $conn->beginTransaction();
+
+            $obj = new TransactionTest\TestObject();
+            $obj->Title = 'Third page';
             $obj->write();
 
-            $obj=new TransactionTest\TestObject();
-            $obj->Title='Fourth page';
+            $obj = new TransactionTest\TestObject();
+            $obj->Title = 'Fourth page';
             $obj->write();
 
             //Revert to a savepoint:
-            DB::get_conn()->transactionRollback('rollback');
+            $conn->rollBack();
 
-            DB::get_conn()->transactionEnd();
-
-            $first=DataObject::get(TransactionTest\TestObject::class, "\"Title\"='First page'");
-            $second=DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Second page'");
-            $third=DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Third page'");
-            $fourth=DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Fourth page'");
+            $first = DataObject::get(
+                TransactionTest\TestObject::class,
+                sprintf('%s = %s', Convert::symbol2sql('Title'), Convert::raw2sql('First page'))
+            );
+            $second = DataObject::get(
+                TransactionTest\TestObject::class,
+                sprintf('%s = %s', Convert::symbol2sql('Title'), Convert::raw2sql('Second page'))
+            );
+            $third = DataObject::get(
+                TransactionTest\TestObject::class,
+                sprintf('%s = %s', Convert::symbol2sql('Title'), Convert::raw2sql('Third page'))
+            );
+            $fourth = DataObject::get(
+                TransactionTest\TestObject::class,
+                sprintf('%s = %s', Convert::symbol2sql('Title'), Convert::raw2sql('Fourth page'))
+            );
 
             //These pages should be in the system
             $this->assertTrue(is_object($first) && $first->exists());

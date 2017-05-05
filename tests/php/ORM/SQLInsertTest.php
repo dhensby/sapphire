@@ -17,7 +17,7 @@ class SQLInsertTest extends SapphireTest
 {
 
     protected static $extra_dataobjects = array(
-        SQLInsertTestBase::class
+        SQLInsertTestBase::class,
     );
 
     public function testEmptyQueryReturnsNothing()
