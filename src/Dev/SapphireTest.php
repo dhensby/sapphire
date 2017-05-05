@@ -3,6 +3,7 @@
 namespace SilverStripe\Dev;
 
 use Doctrine\DBAL\Schema\Schema;
+use PHPUnit\Framework\TestCase;
 use SilverStripe\CMS\Controllers\RootURLController;
 use SilverStripe\Control\Cookie;
 use SilverStripe\Control\Email\Email;
@@ -52,7 +53,7 @@ use Exception;
  * Sapphire unit testing is based on PHPUnit, but provides a number of hooks into our data model that make it easier
  * to work with.
  */
-class SapphireTest extends PHPUnit_Framework_TestCase
+class SapphireTest extends TestCase
 {
 
     /** @config */
