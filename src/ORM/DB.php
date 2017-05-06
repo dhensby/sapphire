@@ -439,8 +439,10 @@ class DB
                             ));
                         }
 
-                        $qb->where($where);
-                        $selectQB->where($where);
+                        if ($where->count()) {
+                            $qb->where($where);
+                            $selectQB->where($where);
+                        }
 
                         // Test to see if this update query shouldn't, in fact, be an insert
                         if ($selectQB->execute()->fetchColumn() > 0) {

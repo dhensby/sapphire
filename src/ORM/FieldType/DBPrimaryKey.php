@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\FieldType;
 
 use Doctrine\DBAL\Schema\Column;
+use SilverStripe\Core\Convert;
 use SilverStripe\Dev\Backtrace;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
@@ -52,7 +53,7 @@ class DBPrimaryKey extends DBInt
         parent::augmentDBTable($table);
 
         $table->setPrimaryKey([
-            $this->getName(),
+            Convert::symbol2sql($this->getName()),
         ]);
     }
 

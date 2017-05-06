@@ -526,7 +526,7 @@ abstract class DBField extends ViewableData
      * @todo Stop this being abstract? We can set up a getDBType and default getDBOptions and have this be unified
      */
     public function augmentDBTable($table) {
-        $table->addColumn($this->getName(), $this->getDBType(), $this->getDBOptions());
+        $table->addColumn(Convert::symbol2sql($this->getName()), $this->getDBType(), $this->getDBOptions());
 
         return $this;
     }
