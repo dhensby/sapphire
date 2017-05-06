@@ -3326,7 +3326,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         if ($fields) {
-            $dbTable = $dbSchema->createTable($table);
+            $dbTable = $dbSchema->createTable(Convert::symbol2sql($table));
             foreach ($fields as $fieldName => $fieldType) {
                 /** @var DBField $field */
                 $fieldSpec = Object::parse_class_spec($fieldType);
@@ -3345,6 +3345,9 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                             $flags[] = 'fulltext';
                             $dbTable->addOption('engine', 'MyISAM');
                             break;
+                    }
+                    foreach ($indexSpec['columns'] as &$column) {
+                        $column = Convert::symbol2sql($column);
                     }
                     if ($indexSpec['type'] === 'unique') {
                         $dbTable->addUniqueIndex($indexSpec['columns'], $indexName, $flags);
@@ -3405,7 +3408,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
                 foreach ($manymanyIndexes as $indexField => $indexSpec) {
                     $linkTable->addIndex([
-                        $indexField,
+                        Convert::symbol2sql($indexField),
                     ]);
                 }
             }

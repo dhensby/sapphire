@@ -4,6 +4,7 @@ namespace SilverStripe\ORM\FieldType;
 
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Image;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FileHandleField;
@@ -43,7 +44,7 @@ class DBForeignKey extends DBInt
         parent::augmentDBTable($table);
 
         $table->addIndex([
-            $this->getName(),
+            Convert::symbol2sql($this->getName()),
         ]);
     }
 
