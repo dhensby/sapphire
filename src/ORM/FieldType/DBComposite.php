@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\FieldType;
 
+use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
@@ -137,7 +138,7 @@ abstract class DBComposite extends DBField
     {
         foreach ($this->compositeDatabaseFields() as $fieldName => $fieldType) {
             /** @var DBField $field */
-            $fieldSpec = Object::parse_class_spec($fieldType);
+            $fieldSpec = ClassInfo::parse_class_spec($fieldType);
             array_unshift($fieldSpec[1], $this->getName() . $fieldName);
             $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
             $field->augmentDBTable($table);

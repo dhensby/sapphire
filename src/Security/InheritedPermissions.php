@@ -3,9 +3,11 @@
 namespace SilverStripe\Security;
 
 use InvalidArgumentException;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Hierarchy\Hierarchy;
 use SilverStripe\Versioned\Versioned;
 use Psr\SimpleCache\CacheInterface;
@@ -360,7 +362,10 @@ class InheritedPermissions implements PermissionChecker, MemberCacheFlusher
             $baseTable = DataObject::getSchema()->baseDataTable($this->getBaseClass());
             $uninheritedPermissions = $stageRecords
                 ->where([
-                    "(\"$typeField\" IN (?, ?) OR " . "(\"$typeField\" = ? AND \"$groupJoinTable\".\"{$baseTable}ID\" IS NOT NULL))"
+                    sprintf('%s IN (?, ?) OR (%s = ? AND %s IS NOT NULL)',
+                        Convert::symbol2sql($typeField),
+                        Convert::symbol2sql($typeField),
+                        Convert::symbol2sql("$groupJoinTable.{$baseTable}ID" ))
                     => [
                         self::ANYONE,
                         self::LOGGED_IN_USERS,
@@ -369,7 +374,10 @@ class InheritedPermissions implements PermissionChecker, MemberCacheFlusher
                 ])
                 ->leftJoin(
                     $groupJoinTable,
-                    "\"$groupJoinTable\".\"{$baseTable}ID\" = \"{$baseTable}\".\"ID\" AND " . "\"$groupJoinTable\".\"GroupID\" IN ($groupIDsSQLList)"
+                    sprintf('%s = %s AND %s IN (%s)',
+                        Convert::symbol2sql("$groupJoinTable.{$baseTable}ID" ),
+                        Convert::symbol2sql("$baseTable.ID" ),
+                        Convert::symbol2sql("$groupJoinTable.GroupID" ),$groupIDsSQLList)
                 )->column('ID');
         } else {
             // Only view pages with ViewType = Anyone if not logged in
