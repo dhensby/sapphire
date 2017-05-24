@@ -1134,8 +1134,8 @@ class SapphireTest extends TestCase
         $prefix = getenv('SS_DATABASE_PREFIX') ?: 'ss_';
         $dbList = $dbConn->getSchemaManager()->listDatabases();
         do {
-            $dbname = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
-        } while (in_array($dbname, $dbList));
+            $dbName = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
+        } while (in_array($dbName, $dbList));
 
         $dbConn->getSchemaManager()->createDatabase($dbName);
 

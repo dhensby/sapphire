@@ -3090,7 +3090,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             $dbTable = $dbSchema->createTable(Convert::symbol2sql($table));
             foreach ($fields as $fieldName => $fieldType) {
                 /** @var DBField $field */
-                $fieldSpec = Object::parse_class_spec($fieldType);
+                $fieldSpec = ClassInfo::parse_class_spec($fieldType);
                 array_unshift($fieldSpec[1], $fieldName);
                 $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
                 $field->augmentDBTable($dbTable);
@@ -3161,7 +3161,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
                 // @todo - add FK constraint support
                 foreach ($manymanyFields as $fieldName => $fieldType) {
                     /** @var DBField $field */
-                    $fieldSpec = Object::parse_class_spec($fieldType);
+                    $fieldSpec = ClassInfo::parse_class_spec($fieldType);
                     array_unshift($fieldSpec[1], $fieldName);
                     $field = Injector::inst()->createWithArgs($fieldSpec[0], $fieldSpec[1]);
                     $field->augmentDBTable($linkTable);

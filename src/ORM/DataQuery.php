@@ -457,16 +457,13 @@ class DataQuery
      */
     public function max($field)
     {
-        $table = DataObject::getSchema()->tableForField($this->dataClass, $field);
-        if (!$table) {
-            return $this->aggregate(
-                DB::get_conn()->getDatabasePlatform()->getMaxExpression(Convert::symbol2sql($field))
-            );
+        try {
+            $column = DataObject::getSchema()->sqlColumnForField($this->dataClass, $field);
+        } catch (\InvalidArgumentException $e) {
+            $column = $field;
         }
         return $this->aggregate(
-            DB::get_conn()->getDatabasePlatform()->getMaxExpression(
-                Convert::symbol2sql($field)
-            )
+            DB::get_conn()->getDatabasePlatform()->getMaxExpression($column)
         );
     }
 
@@ -479,14 +476,13 @@ class DataQuery
      */
     public function min($field)
     {
-        $table = DataObject::getSchema()->tableForField($this->dataClass, $field);
-        if (!$table) {
-            return $this->aggregate("MIN(\"$field\")");
+        try {
+            $column = DataObject::getSchema()->sqlColumnForField($this->dataClass, $field);
+        } catch (\InvalidArgumentException $e) {
+            $column = $field;
         }
         return $this->aggregate(
-            DB::get_conn()->getDatabasePlatform()->getMinExpression(
-                Convert::symbol2sql($field)
-            )
+            DB::get_conn()->getDatabasePlatform()->getMinExpression($column)
         );
     }
 
@@ -499,14 +495,13 @@ class DataQuery
      */
     public function avg($field)
     {
-        $table = DataObject::getSchema()->tableForField($this->dataClass, $field);
-        if (!$table) {
-            return $this->aggregate("AVG(\"$field\")");
+        try {
+            $column = DataObject::getSchema()->sqlColumnForField($this->dataClass, $field);
+        } catch (\InvalidArgumentException $e) {
+            $column = $field;
         }
         return $this->aggregate(
-            DB::get_conn()->getDatabasePlatform()->getAvgExpression(
-                Convert::symbol2sql($field)
-            )
+            DB::get_conn()->getDatabasePlatform()->getAvgExpression($column)
         );
     }
 
@@ -519,14 +514,13 @@ class DataQuery
      */
     public function sum($field)
     {
-        $table = DataObject::getSchema()->tableForField($this->dataClass, $field);
-        if (!$table) {
-            return $this->aggregate("SUM(\"$field\")");
+        try {
+            $column = DataObject::getSchema()->sqlColumnForField($this->dataClass, $field);
+        } catch (\InvalidArgumentException $e) {
+            $column = $field;
         }
         return $this->aggregate(
-            DB::get_conn()->getDatabasePlatform()->getSumExpression(
-                Convert::symbol2sql($field)
-            )
+            DB::get_conn()->getDatabasePlatform()->getSumExpression($column)
         );
     }
 
