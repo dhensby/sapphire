@@ -188,7 +188,7 @@ class DataObjectSchemaGenerationTest extends SapphireTest
     {
         $schema = DB::get_schema()->createSchema();
         $newSchema = clone $schema;
-        $newSchema->dropTable('DataObjectSchemaGenerationTest_IndexDO');
+        $newSchema->dropTable(DataObject::getSchema()->tableName(TestIndexObject::class));
 
         // Table will have been initially created by the $extraDataObjects setting
 
@@ -196,7 +196,7 @@ class DataObjectSchemaGenerationTest extends SapphireTest
         TestIndexObject::config()->update(
             'indexes',
             [
-                'SearchFields' => [
+                'NewIndex' => [
                     'columns' => ['Title'],
                 ],
             ]

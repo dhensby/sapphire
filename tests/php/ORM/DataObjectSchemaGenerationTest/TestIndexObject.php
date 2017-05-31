@@ -19,7 +19,6 @@ class TestIndexObject extends TestObject implements TestOnly
         ],
         'SearchFields' => [
             'type' => 'fulltext',
-            'name' => 'SearchFields',
             'columns' => ['Title', 'Content'],
         ],
     ];
