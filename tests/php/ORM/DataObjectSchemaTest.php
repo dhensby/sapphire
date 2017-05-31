@@ -240,12 +240,7 @@ class DataObjectSchemaTest extends SapphireTest
     public function testDatabaseIndexes()
     {
         $indexes = DataObject::getSchema()->databaseIndexes(AllIndexes::class);
-        $this->assertCount(5, $indexes);
-        $this->assertArrayHasKey('ClassName', $indexes);
-        $this->assertEquals([
-            'type' => 'index',
-            'columns' => ['ClassName'],
-        ], $indexes['ClassName']);
+        $this->assertCount(4, $indexes);
 
         $this->assertArrayHasKey('Content', $indexes);
         $this->assertEquals([
