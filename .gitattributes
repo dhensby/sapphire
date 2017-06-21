@@ -10,4 +10,4 @@
 /behat.yml export-ignore
 
 # Line endings
-sake text eol=lf
+* text eol=lf
