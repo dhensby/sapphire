@@ -1,8 +1,6 @@
 <?php
+namespace Core;
 
-namespace SilverStripe\Core\Tests;
-
-use ReflectionException;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Tests\ClassInfoTest\BaseClass;
 use SilverStripe\Core\Tests\ClassInfoTest\BaseDataClass;
@@ -12,103 +10,82 @@ use SilverStripe\Core\Tests\ClassInfoTest\HasFields;
 use SilverStripe\Core\Tests\ClassInfoTest\NoFields;
 use SilverStripe\Core\Tests\ClassInfoTest\WithCustomTable;
 use SilverStripe\Core\Tests\ClassInfoTest\WithRelation;
-use SilverStripe\Dev\SapphireTest;
+use SilverStripe\ORM\ArrayLib;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\ViewableData;
+use \UnitTester;
 
-class ClassInfoTest extends SapphireTest
+class ClassInfoCest
 {
 
-    protected static $extra_dataobjects = array(
-        BaseClass::class,
-        BaseDataClass::class,
-        ChildClass::class,
-        GrandChildClass::class,
-        HasFields::class,
-        NoFields::class,
-        WithCustomTable::class,
-        WithRelation::class,
-    );
-
-    protected function setUp()
+    public function _before()
     {
-        parent::setUp();
         ClassInfo::reset_db_cache();
     }
 
-    public function testExists()
+    public function testExists(UnitTester $I)
     {
-        $this->assertTrue(ClassInfo::exists(ClassInfo::class));
-        $this->assertTrue(ClassInfo::exists('SilverStripe\\Core\\classinfo'));
-        $this->assertTrue(ClassInfo::exists('SilverStripe\\Core\\Tests\\ClassInfoTest'));
-        $this->assertTrue(ClassInfo::exists('SilverStripe\\Core\\Tests\\CLASSINFOTEST'));
-        $this->assertTrue(ClassInfo::exists('stdClass'));
-        $this->assertTrue(ClassInfo::exists('stdCLASS'));
-        $this->assertFalse(ClassInfo::exists('SomeNonExistantClass'));
+        $I->assertTrue(ClassInfo::exists(ClassInfo::class));
+        $I->assertTrue(ClassInfo::exists('SilverStripe\\Core\\classinfo'));
+        $I->assertTrue(ClassInfo::exists('SilverStripe\\Core\\Tests\\ClassInfoTest\\BaseClass'));
+        $I->assertTrue(ClassInfo::exists('SilverStripe\\Core\\Tests\\CLASSINFOTEST\\BaseClass'));
+        $I->assertTrue(ClassInfo::exists('stdClass'));
+        $I->assertTrue(ClassInfo::exists('stdCLASS'));
+        $I->assertFalse(ClassInfo::exists('SomeNonExistantClass'));
     }
 
-    public function testSubclassesFor()
+    public function testSubclassesFor(UnitTester $I)
     {
         $subclasses = [
             'silverstripe\\core\\tests\\classinfotest\\baseclass' => BaseClass::class,
             'silverstripe\\core\\tests\\classinfotest\\childclass' => ChildClass::class,
             'silverstripe\\core\\tests\\classinfotest\\grandchildclass' => GrandChildClass::class,
         ];
-        $this->assertEquals(
+        $I->assertEquals(
             $subclasses,
             ClassInfo::subclassesFor(BaseClass::class),
             'ClassInfo::subclassesFor() returns only direct subclasses and doesnt include base class'
         );
         ClassInfo::reset_db_cache();
-        $this->assertEquals(
+        $I->assertEquals(
             $subclasses,
             ClassInfo::subclassesFor('silverstripe\\core\\tests\\classinfotest\\baseclass'),
             'ClassInfo::subclassesFor() is acting in a case sensitive way when it should not'
         );
     }
 
-    public function testClassName()
+    public function testClassName(UnitTester $I)
     {
-        $this->assertEquals(
-            ClassInfoTest::class,
-            ClassInfo::class_name($this)
+        $I->assertEquals(
+            UnitTester::class,
+            ClassInfo::class_name($I)
         );
-        $this->assertEquals(
-            ClassInfoTest::class,
-            ClassInfo::class_name('SilverStripe\\Core\\Tests\\ClassInfoTest')
+        $I->assertEquals(
+            UnitTester::class,
+            ClassInfo::class_name('UnitTester')
         );
-        $this->assertEquals(
-            ClassInfoTest::class,
-            ClassInfo::class_name('SilverStripe\\Core\\TESTS\\CLaSsInfOTEsT')
+        $I->assertEquals(
+            UnitTester::class,
+            ClassInfo::class_name('UNIttesTer')
         );
     }
 
-    public function testNonClassName()
+    public function testNonClassName(UnitTester $I)
     {
-        $this->expectException(ReflectionException::class);
-        $this->expectExceptionMessage('Class IAmAClassThatDoesNotExist does not exist');
-        $this->assertEquals('IAmAClassThatDoesNotExist', ClassInfo::class_name('IAmAClassThatDoesNotExist'));
+        $I->expectException(\ReflectionException::class, function () {
+            ClassInfo::class_name('IAmAClassThatDoesNotExist');
+        });
     }
 
-    public function testClassesForFolder()
+    public function testClassesForFolder(UnitTester $I)
     {
         $classes = ClassInfo::classes_for_folder(ltrim(FRAMEWORK_DIR . '/tests', '/'));
-        $this->assertArrayHasKey(
-            'silverstripe\\core\\tests\\classinfotest',
-            $classes,
-            'ClassInfo::classes_for_folder() returns classes matching the filename'
-        );
-        $this->assertContains(
-            ClassInfoTest::class,
-            $classes,
-            'ClassInfo::classes_for_folder() returns classes matching the filename'
-        );
-        $this->assertArrayHasKey(
+        $I->assertArrayHasKey(
             'silverstripe\\core\\tests\\classinfotest\\baseclass',
             $classes,
             'ClassInfo::classes_for_folder() returns additional classes not matching the filename'
         );
-        $this->assertContains(
+        $I->assertContains(
             BaseClass::class,
             $classes,
             'ClassInfo::classes_for_folder() returns additional classes not matching the filename'
@@ -118,7 +95,7 @@ class ClassInfoTest extends SapphireTest
     /**
      * @covers \SilverStripe\Core\ClassInfo::ancestry()
      */
-    public function testAncestry()
+    public function testAncestry(UnitTester $I)
     {
         $ancestry = ClassInfo::ancestry(ChildClass::class);
         $expect = [
@@ -127,20 +104,18 @@ class ClassInfoTest extends SapphireTest
             'silverstripe\\core\tests\classinfotest\\baseclass' => BaseClass::class,
             'silverstripe\\core\tests\classinfotest\\childclass' => ChildClass::class,
         ];
-        $this->assertEquals($expect, $ancestry);
+        $I->assertEquals($expect, $ancestry);
 
         ClassInfo::reset_db_cache();
-        $this->assertEquals(
+        $I->assertEquals(
             $expect,
             ClassInfo::ancestry('silverstripe\\core\\tests\\classINFOtest\\Childclass')
         );
 
         ClassInfo::reset_db_cache();
         $ancestry = ClassInfo::ancestry(ChildClass::class, true);
-        $this->assertEquals(
-            [
-                'silverstripe\\core\tests\classinfotest\\baseclass' => BaseClass::class
-            ],
+        $I->assertEquals(
+            [ 'silverstripe\\core\tests\classinfotest\\baseclass' => BaseClass::class ],
             $ancestry,
             '$tablesOnly option excludes memory-only inheritance classes'
         );
@@ -149,7 +124,7 @@ class ClassInfoTest extends SapphireTest
     /**
      * @covers \SilverStripe\Core\ClassInfo::dataClassesFor()
      */
-    public function testDataClassesFor()
+    public function testDataClassesFor(UnitTester $I)
     {
         $expect = [
             'silverstripe\\core\\tests\\classinfotest\\basedataclass' => BaseDataClass::class,
@@ -164,11 +139,11 @@ class ClassInfoTest extends SapphireTest
         );
 
         ClassInfo::reset_db_cache();
-        $this->assertEquals($expect, ClassInfo::dataClassesFor($classes[0]));
+        $I->assertEquals($expect, ClassInfo::dataClassesFor($classes[0]));
         ClassInfo::reset_db_cache();
-        $this->assertEquals($expect, ClassInfo::dataClassesFor(strtoupper($classes[0])));
+        $I->assertEquals($expect, ClassInfo::dataClassesFor(strtoupper($classes[0])));
         ClassInfo::reset_db_cache();
-        $this->assertEquals($expect, ClassInfo::dataClassesFor($classes[1]));
+        $I->assertEquals($expect, ClassInfo::dataClassesFor($classes[1]));
 
         $expect = [
             'silverstripe\\core\\tests\\classinfotest\\basedataclass' => BaseDataClass::class,
@@ -176,8 +151,8 @@ class ClassInfoTest extends SapphireTest
         ];
 
         ClassInfo::reset_db_cache();
-        $this->assertEquals($expect, ClassInfo::dataClassesFor($classes[2]));
+        $I->assertEquals($expect, ClassInfo::dataClassesFor($classes[2]));
         ClassInfo::reset_db_cache();
-        $this->assertEquals($expect, ClassInfo::dataClassesFor(strtolower($classes[2])));
+        $I->assertEquals($expect, ClassInfo::dataClassesFor(strtolower($classes[2])));
     }
 }
