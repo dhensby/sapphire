@@ -1,19 +1,22 @@
 <?php
-
-namespace SilverStripe\Core\Tests\Injector;
-
+namespace Core\Injector;
 use SilverStripe\Core\Injector\AopProxyService;
 use SilverStripe\Core\Tests\Injector\AopProxyServiceTest\BeforeAfterCallTestAspect;
 use SilverStripe\Core\Tests\Injector\AopProxyServiceTest\ProxyTestObject;
-use SilverStripe\Dev\SapphireTest;
+use \UnitTester;
 
-/**
- * @author <marcus@silverstripe.com.au>
- * @license BSD License http://www.silverstripe.org/bsd-license
- */
-class AopProxyServiceTest extends SapphireTest
+class AppProxyServiceCest
 {
-    public function testBeforeMethodsCalled()
+    public function _before(UnitTester $I)
+    {
+    }
+
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testBeforeMethodsCalled(UnitTester $I)
     {
         $proxy = new AopProxyService();
         $aspect = new BeforeAfterCallTestAspect();
@@ -25,11 +28,11 @@ class AopProxyServiceTest extends SapphireTest
 
         $result = $proxy->myMethod();
 
-        $this->assertEquals('myMethod', $aspect->called);
-        $this->assertEquals(42, $result);
+        $I->assertEquals('myMethod', $aspect->called);
+        $I->assertEquals(42, $result);
     }
 
-    public function testBeforeMethodBlocks()
+    public function testBeforeMethodBlocks(UnitTester $I)
     {
         $proxy = new AopProxyService();
         $aspect = new BeforeAfterCallTestAspect();
@@ -43,24 +46,24 @@ class AopProxyServiceTest extends SapphireTest
 
         $result = $proxy->myMethod();
 
-        $this->assertEquals('myMethod', $aspect->called);
+        $I->assertEquals('myMethod', $aspect->called);
 
         // the actual underlying method will NOT have been called
-        $this->assertNull($result);
+        $I->assertNull($result);
 
         // set up an alternative return value
         $aspect->alternateReturn = 84;
 
         $result = $proxy->myMethod();
 
-        $this->assertEquals('myMethod', $aspect->called);
+        $I->assertEquals('myMethod', $aspect->called);
 
         // the actual underlying method will NOT have been called,
         // instead the alternative return value
-        $this->assertEquals(84, $result);
+        $I->assertEquals(84, $result);
     }
 
-    public function testAfterCall()
+    public function testAfterCall(UnitTester $I)
     {
         $proxy = new AopProxyService();
         $aspect = new BeforeAfterCallTestAspect();
@@ -76,6 +79,6 @@ class AopProxyServiceTest extends SapphireTest
         };
 
         $result = $proxy->myMethod();
-        $this->assertEquals(84, $result);
+        $I->assertEquals(84, $result);
     }
 }
