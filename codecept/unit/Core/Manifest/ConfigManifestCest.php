@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Core\Tests\Manifest;
+namespace Core\Manifest;
 
 use SilverStripe\Config\Collections\MemoryConfigCollection;
 use SilverStripe\Core\Config\CoreConfigFactory;
@@ -9,23 +9,20 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Kernel;
 use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\Core\Manifest\ModuleManifest;
-use SilverStripe\Dev\SapphireTest;
+use \UnitTester;
 
-class ConfigManifestTest extends SapphireTest
+class ConfigManifestCest
 {
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
-
-        $moduleManifest = new ModuleManifest(dirname(__FILE__) . '/fixtures/configmanifest');
+        $moduleManifest = new ModuleManifest(FRAMEWORK_PATH . '/tests/php/Core/Manifest/fixtures/configmanifest');
         $moduleManifest->init();
         ModuleLoader::inst()->pushManifest($moduleManifest);
     }
 
-    protected function tearDown()
+    public function _after(UnitTester $I)
     {
         ModuleLoader::inst()->popManifest();
-        parent::tearDown();
     }
 
     /**
@@ -36,7 +33,7 @@ class ConfigManifestTest extends SapphireTest
      */
     protected function getConfigFixtureValue($name)
     {
-        return $this->getTestConfig()->get(__CLASS__, $name);
+        return $this->getTestConfig()->get('SilverStripe\Core\Tests\Manifest\ConfigManifestTest', $name);
     }
 
     /**
@@ -44,11 +41,11 @@ class ConfigManifestTest extends SapphireTest
      *
      * @return MemoryConfigCollection
      */
-    public function getTestConfig()
+    protected function getTestConfig()
     {
         $config = new MemoryConfigCollection();
         $factory = new CoreConfigFactory();
-        $transformer = $factory->buildYamlTransformerForPath(dirname(__FILE__) . '/fixtures/configmanifest');
+        $transformer = $factory->buildYamlTransformerForPath(FRAMEWORK_PATH . '/tests/php/Core/Manifest/fixtures/configmanifest');
         $config->transform([$transformer]);
         return $config;
     }
@@ -64,114 +61,128 @@ class ConfigManifestTest extends SapphireTest
         return sprintf('Reference path "%s" failed to parse correctly', $path);
     }
 
-    public function testClassRules()
+    // tests
+    public function testClassRules(UnitTester $I)
     {
         $config = $this->getConfigFixtureValue('Class');
-
-        $this->assertEquals(
+codecept_debug($config);
+        $I->assertArrayHasKey('DirectorExists', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['DirectorExists'],
+            $config['DirectorExists'],
             'Only rule correctly detects existing class'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('NoSuchClassExists', $config);
+        $I->assertEquals(
             'No',
-            @$config['NoSuchClassExists'],
+            $config['NoSuchClassExists'],
             'Except rule correctly detects missing class'
         );
     }
 
-    public function testModuleRules()
+    public function testModuleRules(UnitTester $I)
     {
         $config = $this->getConfigFixtureValue('Module');
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('MysiteExists', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['MysiteExists'],
+            $config['MysiteExists'],
             'Only rule correctly detects existing module'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('NoSuchModuleExists', $config);
+        $I->assertEquals(
             'No',
-            @$config['NoSuchModuleExists'],
+            $config['NoSuchModuleExists'],
             'Except rule correctly detects missing module'
         );
     }
 
-    public function testEnvVarSetRules()
+    public function testEnvVarSetRules(UnitTester $I)
     {
         Environment::setEnv('ENVVARSET_FOO', '1');
         $config = $this->getConfigFixtureValue('EnvVarSet');
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('FooSet', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['FooSet'],
+            $config['FooSet'],
             'Only rule correctly detects set environment variable'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('BarSet', $config);
+        $I->assertEquals(
             'No',
-            @$config['BarSet'],
+            $config['BarSet'],
             'Except rule correctly detects unset environment variable'
         );
     }
 
-    public function testConstantDefinedRules()
+    public function testConstantDefinedRules(UnitTester $I)
     {
         define('CONSTANTDEFINED_FOO', 1);
         $config = $this->getConfigFixtureValue('ConstantDefined');
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('FooDefined', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['FooDefined'],
+            $config['FooDefined'],
             'Only rule correctly detects defined constant'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('BarDefined', $config);
+        $I->assertEquals(
             'No',
-            @$config['BarDefined'],
+            $config['BarDefined'],
             'Except rule correctly detects undefined constant'
         );
     }
 
-    public function testEnvOrConstantMatchesValueRules()
+    public function testEnvOrConstantMatchesValueRules(UnitTester $I)
     {
         Environment::setEnv('CONSTANTMATCHESVALUE_FOO', 'Foo');
         define('CONSTANTMATCHESVALUE_BAR', 'Bar');
         $config = $this->getConfigFixtureValue('EnvOrConstantMatchesValue');
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('FooIsFoo', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['FooIsFoo'],
+            $config['FooIsFoo'],
             'Only rule correctly detects environment variable matches specified value'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('BarIsBar', $config);
+        $I->assertEquals(
             'Yes',
-            @$config['BarIsBar'],
+            $config['BarIsBar'],
             'Only rule correctly detects constant matches specified value'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('FooIsQux', $config);
+        $I->assertEquals(
             'No',
-            @$config['FooIsQux'],
+            $config['FooIsQux'],
             'Except rule correctly detects environment variable that doesn\'t match specified value'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('BarIsQux', $config);
+        $I->assertEquals(
             'No',
-            @$config['BarIsQux'],
+            $config['BarIsQux'],
             'Except rule correctly detects environment variable that doesn\'t match specified value'
         );
 
-        $this->assertEquals(
+        $I->assertArrayHasKey('BazIsBaz', $config);
+        $I->assertEquals(
             'No',
-            @$config['BazIsBaz'],
+            $config['BazIsBaz'],
             'Except rule correctly detects undefined variable'
         );
     }
 
-    public function testEnvironmentRules()
+    public function testEnvironmentRules(UnitTester $I)
     {
         /** @var Kernel $kernel */
         $kernel = Injector::inst()->get(Kernel::class);
@@ -180,48 +191,55 @@ class ConfigManifestTest extends SapphireTest
             $config = $this->getConfigFixtureValue('Environment');
 
             foreach (array('dev', 'test', 'live') as $check) {
-                $this->assertEquals(
+                $I->assertArrayHasKey(ucfirst($check).'Environment', $config);
+                $I->assertEquals(
                     $env == $check ? $check : 'not' . $check,
-                    @$config[ucfirst($check) . 'Environment'],
+                    $config[ucfirst($check) . 'Environment'],
                     'Only & except rules correctly detect environment in env ' . $env
                 );
             }
         }
     }
 
-    public function testMultipleRules()
+    public function testMultipleRules(UnitTester $I)
     {
         Environment::setEnv('MULTIPLERULES_ENVVARIABLESET', '1');
         define('MULTIPLERULES_DEFINEDCONSTANT', 'defined');
         $config = $this->getConfigFixtureValue('MultipleRules');
 
-        $this->assertFalse(
-            isset($config['TwoOnlyFail']),
+        $I->assertArrayNotHasKey(
+            'TwoOnlyFail',
+            $config,
             'Fragment is not included if one of the Only rules fails.'
         );
 
-        $this->assertTrue(
-            isset($config['TwoOnlySucceed']),
+        $I->assertArrayHasKey(
+            'TwoOnlySucceed',
+            $config,
             'Fragment is included if both Only rules succeed.'
         );
 
-        $this->assertFalse(
-            isset($config['OneExceptFail']),
-            'Fragment is not included if one of the Except rules fails.'
+        $I->assertArrayNotHasKey(
+            'OneExceptFail',
+            $config,
+            'Fragment is included if one of the Except rules matches.'
         );
 
-        $this->assertFalse(
-            isset($config['TwoExceptFail']),
+        $I->assertArrayNotHasKey(
+            'TwoExceptFail',
+            $config,
             'Fragment is not included if both of the Except rules fail.'
         );
 
-        $this->assertFalse(
-            isset($config['TwoBlocksFail']),
+        $I->assertArrayNotHasKey(
+            'TwoBlocksFail',
+            $config,
             'Fragment is not included if one block fails.'
         );
 
-        $this->assertTrue(
-            isset($config['TwoBlocksSucceed']),
+        $I->assertArrayHasKey(
+            'TwoBlocksSucceed',
+            $config,
             'Fragment is included if both blocks succeed.'
         );
     }
