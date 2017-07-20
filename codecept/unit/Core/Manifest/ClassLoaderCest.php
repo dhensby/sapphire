@@ -1,17 +1,11 @@
 <?php
-
-namespace SilverStripe\Core\Tests\Manifest;
-
-use SilverStripe\Core\Manifest\ClassManifest;
+namespace Core\Manifest;
 use SilverStripe\Core\Manifest\ClassLoader;
-use SilverStripe\Dev\SapphireTest;
+use SilverStripe\Core\Manifest\ClassManifest;
+use \UnitTester;
 
-/**
- * Tests for the {@link ClassManifest} class.
- */
-class ClassLoaderTest extends SapphireTest
+class ClassLoaderCest
 {
-
     /**
      * @var string
      */
@@ -32,64 +26,64 @@ class ClassLoaderTest extends SapphireTest
      */
     protected $testManifest2;
 
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
 
-        $this->baseManifest1 = __DIR__ . '/fixtures/classmanifest';
-        $this->baseManifest2 = __DIR__ . '/fixtures/classmanifest_other';
+        $this->baseManifest1 = FRAMEWORK_PATH . '/tests/php/Core/Manifest/fixtures/classmanifest';
+        $this->baseManifest2 = FRAMEWORK_PATH . '/tests/php/Core/Manifest/fixtures/classmanifest_other';
         $this->testManifest1 = new ClassManifest($this->baseManifest1);
         $this->testManifest2 = new ClassManifest($this->baseManifest2);
         $this->testManifest1->init();
         $this->testManifest2->init();
     }
 
-    public function testExclusive()
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testExclusive(UnitTester $I)
     {
         $loader = new ClassLoader();
 
         $loader->pushManifest($this->testManifest1);
-        $this->assertTrue((bool)$loader->getItemPath('ClassA'));
-        $this->assertFalse((bool)$loader->getItemPath('OtherClassA'));
+        $I->assertTrue((bool)$loader->getItemPath('ClassA'));
+        $I->assertFalse((bool)$loader->getItemPath('OtherClassA'));
 
         $loader->pushManifest($this->testManifest2);
-        $this->assertFalse((bool)$loader->getItemPath('ClassA'));
-        $this->assertTrue((bool)$loader->getItemPath('OtherClassA'));
+        $I->assertFalse((bool)$loader->getItemPath('ClassA'));
+        $I->assertTrue((bool)$loader->getItemPath('OtherClassA'));
 
         $loader->popManifest();
         $loader->pushManifest($this->testManifest2, false);
-        $this->assertTrue((bool)$loader->getItemPath('ClassA'));
-        $this->assertTrue((bool)$loader->getItemPath('OtherClassA'));
+        $I->assertTrue((bool)$loader->getItemPath('ClassA'));
+        $I->assertTrue((bool)$loader->getItemPath('OtherClassA'));
     }
 
-    public function testGetItemPath()
+    public function testGetItemPath(UnitTester $I)
     {
         $loader = new ClassLoader();
 
         $loader->pushManifest($this->testManifest1);
-        $this->assertEquals(
+        $I->assertEquals(
             realpath($this->baseManifest1 . '/module/classes/ClassA.php'),
             realpath($loader->getItemPath('ClassA'))
         );
-        $this->assertEquals(
-            false,
+        $I->assertFalse(
             $loader->getItemPath('UnknownClass')
         );
-        $this->assertEquals(
-            false,
+        $I->assertFalse(
             $loader->getItemPath('OtherClassA')
         );
 
         $loader->pushManifest($this->testManifest2);
-        $this->assertEquals(
-            false,
+        $I->assertFalse(
             $loader->getItemPath('ClassA')
         );
-        $this->assertEquals(
-            false,
+        $I->assertFalse(
             $loader->getItemPath('UnknownClass')
         );
-        $this->assertEquals(
+        $I->assertEquals(
             realpath($this->baseManifest2 . '/module/classes/OtherClassA.php'),
             realpath($loader->getItemPath('OtherClassA'))
         );
