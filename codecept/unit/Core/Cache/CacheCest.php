@@ -1,22 +1,18 @@
 <?php
-
-namespace SilverStripe\Core\Tests\Cache;
-
+namespace Core\Cache;
 use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Core\Cache\ApcuCacheFactory;
 use SilverStripe\Core\Cache\MemcachedCacheFactory;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Tests\Cache\CacheTest\MockCache;
-use SilverStripe\Dev\SapphireTest;
 use Symfony\Component\Cache\Simple\ApcuCache;
 use Symfony\Component\Cache\Simple\MemcachedCache;
+use \UnitTester;
 
-class CacheTest extends SapphireTest
+class CacheCest
 {
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
-
         Injector::inst()
             ->load([
                 ApcuCacheFactory::class => [
@@ -42,14 +38,19 @@ class CacheTest extends SapphireTest
             ]);
     }
 
-    public function testApcuCacheFactory()
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testApcuCacheFactory(UnitTester $I)
     {
         $cache = Injector::inst()->get(CacheInterface::class . '.TestApcuCache');
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             MockCache::class,
             $cache
         );
-        $this->assertEquals(
+        $I->assertEquals(
             [
                 'TestApcuCache_' . md5(BASE_PATH),
                 2600,
@@ -59,14 +60,14 @@ class CacheTest extends SapphireTest
         );
     }
 
-    public function testMemCacheFactory()
+    public function testMemCacheFactory(UnitTester $I)
     {
         $cache = Injector::inst()->get(CacheInterface::class . '.TestMemcache');
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             MockCache::class,
             $cache
         );
-        $this->assertEquals(
+        $I->assertEquals(
             [
                 null,
                 'TestMemCache_' . md5(BASE_PATH),
