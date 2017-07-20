@@ -1,12 +1,14 @@
 <?php
-
-namespace SilverStripe\Core\Tests;
-
+namespace Core;
+use Codeception\Stub;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Extension;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Tests\ObjectTest\BaseObject;
+use SilverStripe\Core\Tests\ObjectTest\CreateTest;
+use SilverStripe\Core\Tests\ObjectTest\Extending;
+use SilverStripe\Core\Tests\ObjectTest\ExtendTest;
 use SilverStripe\Core\Tests\ObjectTest\ExtendTest1;
 use SilverStripe\Core\Tests\ObjectTest\ExtendTest2;
 use SilverStripe\Core\Tests\ObjectTest\ExtendTest3;
@@ -17,39 +19,37 @@ use SilverStripe\Core\Tests\ObjectTest\ExtensionTest2;
 use SilverStripe\Core\Tests\ObjectTest\ExtensionTest3;
 use SilverStripe\Core\Tests\ObjectTest\MyObject;
 use SilverStripe\Core\Tests\ObjectTest\MySubObject;
+use SilverStripe\Core\Tests\ObjectTest\T2;
 use SilverStripe\Core\Tests\ObjectTest\TestExtension;
-use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Versioned\Versioned;
+use \UnitTester;
 
-/**
- * @todo tests for addStaticVars()
- * @todo tests for setting statics which are not defined on the object as built-in PHP statics
- * @todo tests for setting statics through extensions (#2387)
- * @skipUpgrade
- */
-class ObjectTest extends SapphireTest
+class ObjectCest
 {
-
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
         Injector::inst()->unregisterObjects([
             Extension::class,
             BaseObject::class,
         ]);
     }
 
-    public function testHasmethodBehaviour()
+    public function _after(UnitTester $I)
     {
-        $obj = new ObjectTest\ExtendTest();
+    }
 
-        $this->assertTrue($obj->hasMethod('extendableMethod'), "Extension method found in original spelling");
-        $this->assertTrue($obj->hasMethod('ExTendableMethod'), "Extension method found case-insensitive");
+    // tests
+    public function testHasmethodBehaviour(UnitTester $I)
+    {
+        $obj = new ExtendTest();
+
+        $I->assertTrue($obj->hasMethod('extendableMethod'), "Extension method found in original spelling");
+        $I->assertTrue($obj->hasMethod('ExTendableMethod'), "Extension method found case-insensitive");
 
         $objs = array();
-        $objs[] = new ObjectTest\T2();
-        $objs[] = new ObjectTest\T2();
-        $objs[] = new ObjectTest\T2();
+        $objs[] = new T2();
+        $objs[] = new T2();
+        $objs[] = new T2();
 
         // All these methods should exist and return true
         $trueMethods = [
@@ -65,35 +65,35 @@ class ObjectTest extends SapphireTest
             foreach ($trueMethods as $method) {
                 $methodU = strtoupper($method);
                 $methodL = strtoupper($method);
-                $this->assertTrue($obj->hasMethod($method), "Test that obj#$i has method $method");
-                $this->assertTrue($obj->hasMethod($methodU), "Test that obj#$i has method $methodU");
-                $this->assertTrue($obj->hasMethod($methodL), "Test that obj#$i has method $methodL");
+                $I->assertTrue($obj->hasMethod($method), "Test that obj#$i has method $method");
+                $I->assertTrue($obj->hasMethod($methodU), "Test that obj#$i has method $methodU");
+                $I->assertTrue($obj->hasMethod($methodL), "Test that obj#$i has method $methodL");
 
-                $this->assertTrue($obj->$method(), "Test that obj#$i can call method $method");
-                $this->assertTrue($obj->$methodU(), "Test that obj#$i can call method $methodU");
-                $this->assertTrue($obj->$methodL(), "Test that obj#$i can call method $methodL");
+                $I->assertTrue($obj->$method(), "Test that obj#$i can call method $method");
+                $I->assertTrue($obj->$methodU(), "Test that obj#$i can call method $methodU");
+                $I->assertTrue($obj->$methodL(), "Test that obj#$i can call method $methodL");
             }
 
-            $this->assertTrue($obj->hasMethod('Wrapping'), "Test that obj#$i has method Wrapping");
-            $this->assertTrue($obj->hasMethod('WRAPPING'), "Test that obj#$i has method WRAPPING");
-            $this->assertTrue($obj->hasMethod('wrapping'), "Test that obj#$i has method wrapping");
+            $I->assertTrue($obj->hasMethod('Wrapping'), "Test that obj#$i has method Wrapping");
+            $I->assertTrue($obj->hasMethod('WRAPPING'), "Test that obj#$i has method WRAPPING");
+            $I->assertTrue($obj->hasMethod('wrapping'), "Test that obj#$i has method wrapping");
 
-            $this->assertEquals("Wrapping", $obj->Wrapping(), "Test that obj#$i can call method Wrapping");
-            $this->assertEquals("Wrapping", $obj->WRAPPING(), "Test that obj#$i can call method WRAPPIGN");
-            $this->assertEquals("Wrapping", $obj->wrapping(), "Test that obj#$i can call method wrapping");
+            $I->assertEquals("Wrapping", $obj->Wrapping(), "Test that obj#$i can call method Wrapping");
+            $I->assertEquals("Wrapping", $obj->WRAPPING(), "Test that obj#$i can call method WRAPPIGN");
+            $I->assertEquals("Wrapping", $obj->wrapping(), "Test that obj#$i can call method wrapping");
         }
     }
 
-    public function testSingletonCreation()
+    public function testSingletonCreation(UnitTester $I)
     {
         $myObject = MyObject::singleton();
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             MyObject::class,
             $myObject,
             'singletons are creating a correct class instance'
         );
         $mySubObject = MySubObject::singleton();
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             MySubObject::class,
             $mySubObject,
             'singletons are creating a correct subclass instance'
@@ -101,50 +101,50 @@ class ObjectTest extends SapphireTest
 
         $myFirstObject = MyObject::singleton();
         $mySecondObject = MyObject::singleton();
-        $this->assertTrue(
+        $I->assertTrue(
             $myFirstObject === $mySecondObject,
             'singletons are using the same object on subsequent calls'
         );
     }
 
-    public function testStaticGetterMethod()
+    public function testStaticGetterMethod(UnitTester $I)
     {
         $obj = singleton(MyObject::class);
-        $this->assertEquals(
+        $I->assertEquals(
             'MyObject',
             $obj->stat('mystaticProperty'),
             'Uninherited statics through stat() on a singleton behave the same as built-in PHP statics'
         );
     }
 
-    public function testStaticInheritanceGetters()
+    public function testStaticInheritanceGetters(UnitTester $I)
     {
         $subObj = singleton(MyObject::class);
-        $this->assertEquals(
+        $I->assertEquals(
             $subObj->stat('mystaticProperty'),
             'MyObject',
             'Statics defined on a parent class are available through stat() on a subclass'
         );
     }
 
-    public function testStaticSettingOnSingletons()
+    public function testStaticSettingOnSingletons(UnitTester $I)
     {
         $singleton1 = singleton(MyObject::class);
         $singleton2 = singleton(MyObject::class);
         $singleton1->set_stat('mystaticProperty', 'changed');
-        $this->assertEquals(
+        $I->assertEquals(
             $singleton2->stat('mystaticProperty'),
             'changed',
             'Statics setting is populated throughout singletons without explicitly clearing cache'
         );
     }
 
-    public function testStaticSettingOnInstances()
+    public function testStaticSettingOnInstances(UnitTester $I)
     {
-        $instance1 = new ObjectTest\MyObject();
-        $instance2 = new ObjectTest\MyObject();
+        $instance1 = new MyObject();
+        $instance2 = new MyObject();
         $instance1->set_stat('mystaticProperty', 'changed');
-        $this->assertEquals(
+        $I->assertEquals(
             $instance2->stat('mystaticProperty'),
             'changed',
             'Statics setting through set_stat() is populated throughout instances without explicitly clearing cache'
@@ -154,39 +154,39 @@ class ObjectTest extends SapphireTest
     /**
      * Tests that {@link Object::create()} correctly passes all arguments to the new object
      */
-    public function testCreateWithArgs()
+    public function testCreateWithArgs(UnitTester $I)
     {
-        $createdObj = ObjectTest\CreateTest::create('arg1', 'arg2', array(), null, 'arg5');
-        $this->assertEquals($createdObj->constructArguments, array('arg1', 'arg2', array(), null, 'arg5'));
+        $createdObj = CreateTest::create('arg1', 'arg2', array(), null, 'arg5');
+        $I->assertEquals($createdObj->constructArguments, array('arg1', 'arg2', array(), null, 'arg5'));
     }
 
-    public function testCreateLateStaticBinding()
+    public function testCreateLateStaticBinding(UnitTester $I)
     {
-        $createdObj = ObjectTest\CreateTest::create('arg1', 'arg2', array(), null, 'arg5');
-        $this->assertEquals($createdObj->constructArguments, array('arg1', 'arg2', array(), null, 'arg5'));
+        $createdObj = CreateTest::create('arg1', 'arg2', array(), null, 'arg5');
+        $I->assertEquals($createdObj->constructArguments, array('arg1', 'arg2', array(), null, 'arg5'));
     }
 
     /**
      * Tests {@link Object::singleton()}
      */
-    public function testSingleton()
+    public function testSingleton(UnitTester $I)
     {
         $inst = Controller::singleton();
-        $this->assertInstanceOf(Controller::class, $inst);
+        $I->assertInstanceOf(Controller::class, $inst);
         $inst2 = Controller::singleton();
-        $this->assertSame($inst2, $inst);
+        $I->assertSame($inst2, $inst);
     }
 
-    public function testGetExtensions()
+    public function testGetExtensions(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             array(
                 'SilverStripe\\Core\\Tests\\oBjEcTTEST\\EXTENDTest1',
                 "SilverStripe\\Core\\Tests\\ObjectTest\\ExtendTest2",
             ),
             ExtensionTest::get_extensions()
         );
-        $this->assertEquals(
+        $I->assertEquals(
             array(
                 'SilverStripe\\Core\\Tests\\oBjEcTTEST\\EXTENDTest1',
                 "SilverStripe\\Core\\Tests\\ObjectTest\\ExtendTest2('FOO', 'BAR')",
@@ -195,22 +195,22 @@ class ObjectTest extends SapphireTest
         );
         $inst = new ExtensionTest();
         $extensions = $inst->getExtensionInstances();
-        $this->assertCount(2, $extensions);
-        $this->assertArrayHasKey(ExtendTest1::class, $extensions);
-        $this->assertInstanceOf(
+        $I->assertCount(2, $extensions);
+        $I->assertArrayHasKey(ExtendTest1::class, $extensions);
+        $I->assertInstanceOf(
             ExtendTest1::class,
             $extensions[ExtendTest1::class]
         );
-        $this->assertArrayHasKey(ExtendTest2::class, $extensions);
-        $this->assertInstanceOf(
+        $I->assertArrayHasKey(ExtendTest2::class, $extensions);
+        $I->assertInstanceOf(
             ExtendTest2::class,
             $extensions[ExtendTest2::class]
         );
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             ExtendTest1::class,
             $inst->getExtensionInstance(ExtendTest1::class)
         );
-        $this->assertInstanceOf(
+        $I->assertInstanceOf(
             ExtendTest2::class,
             $inst->getExtensionInstance(ExtendTest2::class)
         );
@@ -219,40 +219,40 @@ class ObjectTest extends SapphireTest
     /**
      * Tests {@link Object::has_extension()}, {@link Object::add_extension()}
      */
-    public function testHasAndAddExtension()
+    public function testHasAndAddExtension(UnitTester $I)
     {
         // ObjectTest_ExtendTest1 is built in via $extensions
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest::has_extension('SilverStripe\\Core\\Tests\\oBjEcTTEST\\EXTENDTest1'),
             "Extensions are detected when set on Object::\$extensions on has_extension() without case-sensitivity"
         );
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest::has_extension(ExtendTest1::class),
             "Extensions are detected when set on Object::\$extensions on has_extension() without case-sensitivity"
         );
-        $this->assertTrue(
+        $I->assertTrue(
             singleton(ExtensionTest::class)->hasExtension(ExtendTest1::class),
             "Extensions are detected when set on Object::\$extensions on instance hasExtension() without"
             . " case-sensitivity"
         );
 
         // ObjectTest_ExtendTest2 is built in via $extensions (with parameters)
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest::has_extension(ExtendTest2::class),
             "Extensions are detected with static has_extension() when set on Object::\$extensions with"
             . " additional parameters"
         );
-        $this->assertTrue(
+        $I->assertTrue(
             singleton(ExtensionTest::class)->hasExtension(ExtendTest2::class),
             "Extensions are detected with instance hasExtension() when set on Object::\$extensions with"
             . " additional parameters"
         );
-        $this->assertFalse(
+        $I->assertFalse(
             ExtensionTest::has_extension(ExtendTest3::class),
             "Other extensions available in the system are not present unless explicitly added to this object"
             . " when checking through has_extension()"
         );
-        $this->assertFalse(
+        $I->assertFalse(
             singleton(ExtensionTest::class)->hasExtension(ExtendTest3::class),
             "Other extensions available in the system are not present unless explicitly added to this object"
             . " when checking through instance hasExtension()"
@@ -260,32 +260,32 @@ class ObjectTest extends SapphireTest
 
         // ObjectTest_ExtendTest3 is added manually
         ExtensionTest::add_extension(ExtendTest3::class . '("Param")');
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest::has_extension(ExtendTest3::class),
             "Extensions are detected with static has_extension() when added through add_extension()"
         );
         // ExtendTest4 is added manually
         ExtensionTest3::add_extension(ExtendTest4::class . '("Param")');
         // test against ObjectTest_ExtendTest3, not ObjectTest_ExtendTest3
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest3::has_extension(ExtendTest4::class),
             "Extensions are detected with static has_extension() when added through add_extension()"
         );
         // test against ObjectTest_ExtendTest3, not ExtendTest4 to test if it picks up
         // the sub classes of ObjectTest_ExtendTest3
-        $this->assertTrue(
+        $I->assertTrue(
             ExtensionTest3::has_extension(ExtendTest3::class),
             "Sub-Extensions are detected with static has_extension() when added through add_extension()"
         );
         // strictly test against ObjectTest_ExtendTest3, not ExtendTest4 to test if it picks up
         // the sub classes of ObjectTest_ExtendTest3
-        $this->assertFalse(
+        $I->assertFalse(
             ExtensionTest3::has_extension(ExtendTest3::class, null, true),
             "Sub-Extensions are detected with static has_extension() when added through add_extension()"
         );
         // a singleton() wouldn't work as its already initialized
         $objectTest_ExtensionTest = new ExtensionTest();
-        $this->assertTrue(
+        $I->assertTrue(
             $objectTest_ExtensionTest->hasExtension(ExtendTest3::class),
             "Extensions are detected with instance hasExtension() when added through add_extension()"
         );
@@ -295,124 +295,124 @@ class ObjectTest extends SapphireTest
         ExtensionTest::remove_extension(ExtendTest3::class);
     }
 
-    public function testRemoveExtension()
+    public function testRemoveExtension(UnitTester $I)
     {
         // manually add ObjectTest_ExtendTest2
-        ObjectTest\ExtensionRemoveTest::add_extension(ExtendTest2::class);
-        $this->assertTrue(
-            ObjectTest\ExtensionRemoveTest::has_extension(ExtendTest2::class),
+        ExtensionRemoveTest::add_extension(ExtendTest2::class);
+        $I->assertTrue(
+            ExtensionRemoveTest::has_extension(ExtendTest2::class),
             "Extension added through \$add_extension() are added correctly"
         );
 
-        ObjectTest\ExtensionRemoveTest::remove_extension(ExtendTest2::class);
-        $this->assertFalse(
-            ObjectTest\ExtensionRemoveTest::has_extension(ExtendTest2::class),
+        ExtensionRemoveTest::remove_extension(ExtendTest2::class);
+        $I->assertFalse(
+            ExtensionRemoveTest::has_extension(ExtendTest2::class),
             "Extension added through \$add_extension() are detected as removed in has_extension()"
         );
-        $this->assertFalse(
+        $I->assertFalse(
             singleton(ExtensionRemoveTest::class)->hasExtension(ExtendTest2::class),
             "Extensions added through \$add_extension() are detected as removed in instances through hasExtension()"
         );
 
         // ObjectTest_ExtendTest1 is already present in $extensions
-        ObjectTest\ExtensionRemoveTest::remove_extension(ExtendTest1::class);
+        ExtensionRemoveTest::remove_extension(ExtendTest1::class);
 
-        $this->assertFalse(
-            ObjectTest\ExtensionRemoveTest::has_extension(ExtendTest1::class),
+        $I->assertFalse(
+            ExtensionRemoveTest::has_extension(ExtendTest1::class),
             "Extension added through \$extensions are detected as removed in has_extension()"
         );
 
-        $objectTest_ExtensionRemoveTest = new ObjectTest\ExtensionRemoveTest();
-        $this->assertFalse(
+        $objectTest_ExtensionRemoveTest = new ExtensionRemoveTest();
+        $I->assertFalse(
             $objectTest_ExtensionRemoveTest->hasExtension(ExtendTest1::class),
             "Extensions added through \$extensions are detected as removed in instances through hasExtension()"
         );
     }
 
-    public function testRemoveExtensionWithParameters()
+    public function testRemoveExtensionWithParameters(UnitTester $I)
     {
-        ObjectTest\ExtensionRemoveTest::add_extension(ExtendTest2::class . '("MyParam")');
+        ExtensionRemoveTest::add_extension(ExtendTest2::class . '("MyParam")');
 
-        $this->assertTrue(
-            ObjectTest\ExtensionRemoveTest::has_extension(ExtendTest2::class),
+        $I->assertTrue(
+            ExtensionRemoveTest::has_extension(ExtendTest2::class),
             "Extension added through \$add_extension() are added correctly"
         );
 
-        ObjectTest\ExtensionRemoveTest::remove_extension(ExtendTest2::class);
-        $this->assertFalse(
+        ExtensionRemoveTest::remove_extension(ExtendTest2::class);
+        $I->assertFalse(
             ExtensionRemoveTest::has_extension(ExtendTest2::class),
             "Extension added through \$add_extension() are detected as removed in has_extension()"
         );
 
-        $objectTest_ExtensionRemoveTest = new ObjectTest\ExtensionRemoveTest();
-        $this->assertFalse(
+        $objectTest_ExtensionRemoveTest = new ExtensionRemoveTest();
+        $I->assertFalse(
             $objectTest_ExtensionRemoveTest->hasExtension(ExtendTest2::class),
             "Extensions added through \$extensions are detected as removed in instances through hasExtension()"
         );
     }
 
-    public function testIsA()
+    public function testIsA(UnitTester $I)
     {
-        $this->assertTrue(ObjectTest\MyObject::create() instanceof ObjectTest\BaseObject);
-        $this->assertTrue(ObjectTest\MyObject::create() instanceof ObjectTest\MyObject);
+        $I->assertTrue(MyObject::create() instanceof BaseObject);
+        $I->assertTrue(MyObject::create() instanceof MyObject);
     }
 
     /**
      * Tests {@link Object::hasExtension() and Object::getExtensionInstance()}
      */
-    public function testExtInstance()
+    public function testExtInstance(UnitTester $I)
     {
         $obj = new ExtensionTest2();
 
-        $this->assertTrue($obj->hasExtension(TestExtension::class));
-        $this->assertTrue($obj->getExtensionInstance(TestExtension::class) instanceof ObjectTest\TestExtension);
+        $I->assertTrue($obj->hasExtension(TestExtension::class));
+        $I->assertTrue($obj->getExtensionInstance(TestExtension::class) instanceof TestExtension);
     }
 
-    public function testExtend()
+    public function testExtend(UnitTester $I)
     {
-        $object = new ObjectTest\ExtendTest();
+        $object = new ExtendTest();
         $argument = 'test';
 
-        $this->assertEquals($object->extend('extendableMethod'), array('ExtendTest2()'));
-        $this->assertEquals($object->extend('extendableMethod', $argument), array('ExtendTest2(modified)'));
-        $this->assertEquals($argument, 'modified');
+        $I->assertEquals($object->extend('extendableMethod'), array('ExtendTest2()'));
+        $I->assertEquals($object->extend('extendableMethod', $argument), array('ExtendTest2(modified)'));
+        $I->assertEquals($argument, 'modified');
 
-        $this->assertEquals(
+        $I->assertEquals(
             array('ExtendTest()', 'ExtendTest2()'),
             $object->invokeWithExtensions('extendableMethod')
         );
         $arg1 = 'test';
         $arg2 = 'bob';
-        $this->assertEquals(
+        $I->assertEquals(
             array('ExtendTest(test,bob)', 'ExtendTest2(modified,objectmodified)'),
             $object->invokeWithExtensions('extendableMethod', $arg1, $arg2)
         );
-        $this->assertEquals('modified', $arg1);
-        $this->assertEquals('objectmodified', $arg2);
+        $I->assertEquals('modified', $arg1);
+        $I->assertEquals('objectmodified', $arg2);
 
-        $object2 = new ObjectTest\Extending();
+        $object2 = new Extending();
         $first = 1;
         $second = 2;
         $third = 3;
         $result = $object2->getResults($first, $second, $third);
-        $this->assertEquals(
+        $I->assertEquals(
             array(array('before', 'extension', 'after')),
             $result
         );
-        $this->assertEquals(31, $first);
-        $this->assertEquals(32, $second);
-        $this->assertEquals(33, $third);
+        $I->assertEquals(31, $first);
+        $I->assertEquals(32, $second);
+        $I->assertEquals(33, $third);
     }
 
-    public function testParseClassSpec()
+    public function testParseClassSpec(UnitTester $I)
     {
         // Simple case
-        $this->assertEquals(
+        $I->assertEquals(
             array(Versioned::class, array('Stage', 'Live')),
             ClassInfo::parse_class_spec("SilverStripe\\Versioned\\Versioned('Stage','Live')")
         );
         // Case with service identifier
-        $this->assertEquals(
+        $I->assertEquals(
             [
                 Versioned::class . '.versioned',
                 ['Versioned'],
@@ -420,33 +420,33 @@ class ObjectTest extends SapphireTest
             ClassInfo::parse_class_spec("SilverStripe\\Versioned\\Versioned.versioned('Versioned')")
         );
         // String with commas
-        $this->assertEquals(
+        $I->assertEquals(
             array(Versioned::class, array('Stage,Live', 'Stage')),
             ClassInfo::parse_class_spec("SilverStripe\\Versioned\\Versioned('Stage,Live','Stage')")
         );
         // String with quotes
-        $this->assertEquals(
+        $I->assertEquals(
             array(Versioned::class, array('Stage\'Stage,Live\'Live', 'Live')),
             ClassInfo::parse_class_spec("SilverStripe\\Versioned\\Versioned('Stage\\'Stage,Live\\'Live','Live')")
         );
 
         // True, false and null values
-        $this->assertEquals(
+        $I->assertEquals(
             array('ClassName', array('string', true, array('string', false))),
             ClassInfo::parse_class_spec('ClassName("string", true, array("string", false))')
         );
-        $this->assertEquals(
+        $I->assertEquals(
             array('ClassName', array(true, false, null)),
             ClassInfo::parse_class_spec('ClassName(true, false, null)')
         );
 
         // Array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Enum', array(array('Accepted', 'Pending', 'Declined', 'Unsubmitted'), 'Unsubmitted')),
             ClassInfo::parse_class_spec("Enum(array('Accepted', 'Pending', 'Declined', 'Unsubmitted'), 'Unsubmitted')")
         );
         // Nested array
-        $this->assertEquals(
+        $I->assertEquals(
             [
                 'Enum',
                 [
@@ -459,12 +459,12 @@ class ObjectTest extends SapphireTest
             )
         );
         // 5.4 Shorthand Array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Enum', array(array('Accepted', 'Pending', 'Declined', 'Unsubmitted'), 'Unsubmitted')),
             ClassInfo::parse_class_spec("Enum(['Accepted', 'Pending', 'Declined', 'Unsubmitted'], 'Unsubmitted')")
         );
         // 5.4 Nested shorthand array
-        $this->assertEquals(
+        $I->assertEquals(
             [
                 'Enum',
                 [
@@ -478,64 +478,64 @@ class ObjectTest extends SapphireTest
         );
 
         // Associative array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Varchar', array(255, array('nullifyEmpty' => false))),
             ClassInfo::parse_class_spec("Varchar(255, array('nullifyEmpty' => false))")
         );
         // Nested associative array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Test', array('string', array('nested' => array('foo' => 'bar')))),
             ClassInfo::parse_class_spec("Test('string', array('nested' => array('foo' => 'bar')))")
         );
         // 5.4 shorthand associative array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Varchar', array(255, array('nullifyEmpty' => false))),
             ClassInfo::parse_class_spec("Varchar(255, ['nullifyEmpty' => false])")
         );
         // 5.4 shorthand nested associative array
-        $this->assertEquals(
+        $I->assertEquals(
             array('Test', array('string', array('nested' => array('foo' => 'bar')))),
             ClassInfo::parse_class_spec("Test('string', ['nested' => ['foo' => 'bar']])")
         );
 
         // Namespaced class
-        $this->assertEquals(
+        $I->assertEquals(
             array('Test\MyClass', array()),
             ClassInfo::parse_class_spec('Test\MyClass')
         );
         // Fully qualified namespaced class
-        $this->assertEquals(
+        $I->assertEquals(
             array('\Test\MyClass', array()),
             ClassInfo::parse_class_spec('\Test\MyClass')
         );
     }
 
-    public function testInjectedExtensions()
+    public function testInjectedExtensions(UnitTester $I)
     {
-        $mockExtension = $this->createMock(TestExtension::class);
+        $mockExtension = Stub::make(TestExtension::class);
         $mockClass = get_class($mockExtension);
 
         $object = new ExtensionTest2();
 
         // sanity check
-        $this->assertNotEquals(TestExtension::class, $mockClass);
+        $I->assertNotEquals(TestExtension::class, $mockClass);
 
-        $this->assertTrue($object->hasExtension(TestExtension::class));
-        $this->assertFalse($object->hasExtension($mockClass));
-        $this->assertCount(1, $object->getExtensionInstances());
-        $this->assertInstanceOf(TestExtension::class, $object->getExtensionInstance(TestExtension::class));
-        $this->assertNotInstanceOf($mockClass, $object->getExtensionInstance(TestExtension::class));
+        $I->assertTrue($object->hasExtension(TestExtension::class));
+        $I->assertFalse($object->hasExtension($mockClass));
+        $I->assertCount(1, $object->getExtensionInstances());
+        $I->assertInstanceOf(TestExtension::class, $object->getExtensionInstance(TestExtension::class));
+        $I->assertNotInstanceOf($mockClass, $object->getExtensionInstance(TestExtension::class));
 
         Injector::inst()->registerService($mockExtension, TestExtension::class);
 
         $object = new ExtensionTest2();
 
-        $this->assertTrue($object->hasExtension(TestExtension::class));
-        $this->assertTrue($object->hasExtension($mockClass));
-        $this->assertCount(1, $object->getExtensionInstances());
-        $this->assertInstanceOf(TestExtension::class, $object->getExtensionInstance(TestExtension::class));
-        $this->assertInstanceOf($mockClass, $object->getExtensionInstance(TestExtension::class));
-        $this->assertInstanceOf(TestExtension::class, $object->getExtensionInstance($mockClass));
-        $this->assertInstanceOf($mockClass, $object->getExtensionInstance($mockClass));
+        $I->assertTrue($object->hasExtension(TestExtension::class));
+        $I->assertTrue($object->hasExtension($mockClass));
+        $I->assertCount(1, $object->getExtensionInstances());
+        $I->assertInstanceOf(TestExtension::class, $object->getExtensionInstance(TestExtension::class));
+        $I->assertInstanceOf($mockClass, $object->getExtensionInstance(TestExtension::class));
+        $I->assertInstanceOf(TestExtension::class, $object->getExtensionInstance($mockClass));
+        $I->assertInstanceOf($mockClass, $object->getExtensionInstance($mockClass));
     }
 }
