@@ -1,30 +1,37 @@
 <?php
-
-namespace SilverStripe\Core\Tests;
-
-use SilverStripe\Dev\SapphireTest;
+namespace Core;
+use Helper\Scenario;
 use SilverStripe\View\Parsers\HTMLCleaner;
+use \UnitTester;
 
-class HTMLCleanerTest extends SapphireTest
+class HTMLCleanerCest
 {
+    public function _before(UnitTester $I)
+    {
+    }
 
-    public function testHTMLClean()
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testHTMLClean(UnitTester $I, $scenario)
     {
         $cleaner = HTMLCleaner::inst();
 
         if ($cleaner) {
-            $this->assertEquals(
+            $I->assertEquals(
                 $cleaner->cleanHTML('<p>wrong <b>nesting</i></p>'),
                 '<p>wrong <b>nesting</b></p>',
                 "HTML cleaned properly"
             );
-            $this->assertEquals(
+            $I->assertEquals(
                 $cleaner->cleanHTML('<p>unclosed paragraph'),
                 '<p>unclosed paragraph</p>',
                 "HTML cleaned properly"
             );
         } else {
-            $this->markTestSkipped('No HTMLCleaner library available (tidy or HTMLBeautifier)');
+            $scenario->skip('No HTMLCleaner library available (tidy or HTMLBeautifier)');
         }
     }
 }
