@@ -1,17 +1,12 @@
 <?php
-
-namespace SilverStripe\Core\Tests\Manifest;
-
+namespace Core\Manifest;
 use SilverStripe\Core\Manifest\ModuleLoader;
-use SilverStripe\View\ThemeResourceLoader;
-use SilverStripe\View\ThemeManifest;
-use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Core\Manifest\ModuleManifest;
+use SilverStripe\View\ThemeManifest;
+use SilverStripe\View\ThemeResourceLoader;
+use \UnitTester;
 
-/**
- * Tests for the {@link TemplateLoader} class.
- */
-class ThemeResourceLoaderTest extends SapphireTest
+class ThemeResourceLoaderCest
 {
     /**
      * @var string
@@ -28,15 +23,10 @@ class ThemeResourceLoaderTest extends SapphireTest
      */
     private $loader;
 
-    /**
-     * Set up manifest before each test
-     */
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
-
         // Fake project root
-        $this->base = dirname(__FILE__) . '/fixtures/templatemanifest';
+        $this->base = FRAMEWORK_PATH . '/tests/php/Core/Manifest/fixtures/templatemanifest';
         ModuleManifest::config()->set('module_priority', ['$project', '$other_modules']);
         ModuleManifest::config()->set('project', 'myproject');
 
@@ -54,61 +44,75 @@ class ThemeResourceLoaderTest extends SapphireTest
         $this->loader->addSet('$default', $this->manifest);
     }
 
-    protected function tearDown()
+    public function _after(UnitTester $I)
     {
         ModuleLoader::inst()->popManifest();
-        parent::tearDown();
     }
 
+    protected function createTestTemplates($templates)
+    {
+        foreach ($templates as $template) {
+            file_put_contents($template, '');
+        }
+    }
+
+    protected function removeTestTemplates($templates)
+    {
+        foreach ($templates as $template) {
+            unlink($template);
+        }
+    }
+
+    // tests
     /**
      * Test that 'main' and 'Layout' templates are loaded from module
      */
-    public function testFindTemplatesInModule()
+    public function testFindTemplatesInModule(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/module/templates/Page.ss",
             $this->loader->findTemplate('Page', ['$default'])
         );
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/module/templates/Layout/Page.ss",
             $this->loader->findTemplate(['type' => 'Layout', 'Page'], ['$default'])
         );
     }
 
-    public function testFindNestedThemeTemplates()
+    public function testFindNestedThemeTemplates(UnitTester $I)
     {
         // Without including the theme this template cannot be found
-        $this->assertEquals(null, $this->loader->findTemplate('NestedThemePage', ['$default']));
+        $I->assertNull($this->loader->findTemplate('NestedThemePage', ['$default']));
 
         // With a nested theme available then it is available
-        $this->assertEquals(
+        $I->assertEquals(
             "{$this->base}/module/themes/subtheme/templates/NestedThemePage.ss",
             $this->loader->findTemplate(
                 'NestedThemePage',
                 [
-                'silverstripe/module:subtheme',
-                '$default'
+                    'silverstripe/module:subtheme',
+                    '$default'
                 ]
             )
         );
 
         // Can also be found if excluding $default theme
-        $this->assertEquals(
+        $I->assertEquals(
             "{$this->base}/module/themes/subtheme/templates/NestedThemePage.ss",
             $this->loader->findTemplate(
                 'NestedThemePage',
                 [
-                'silverstripe/module:subtheme',
+                    'silverstripe/module:subtheme',
                 ]
             )
         );
     }
 
-    public function testFindTemplateByType()
+    public function testFindTemplateByType(UnitTester $I)
     {
         // Test that "type" is respected properly
-        $this->assertEquals(
+        $I->assertEquals(
             "{$this->base}/module/templates/MyNamespace/Layout/MyClass.ss",
             $this->loader->findTemplate(
                 [
@@ -131,7 +135,7 @@ class ThemeResourceLoaderTest extends SapphireTest
         );
 
         // Non-typed template can be found even if looking for typed theme at a lower priority
-        $this->assertEquals(
+        $I->assertEquals(
             "{$this->base}/module/templates/MyNamespace/MyClass.ss",
             $this->loader->findTemplate(
                 [
@@ -154,32 +158,32 @@ class ThemeResourceLoaderTest extends SapphireTest
         );
     }
 
-    public function testFindTemplatesByPath()
+    public function testFindTemplatesByPath(UnitTester $I)
     {
         // Items given as full paths are returned directly
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/Page.ss",
             $this->loader->findTemplate("$this->base/themes/theme/templates/Page.ss", ['theme'])
         );
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/Page.ss",
             $this->loader->findTemplate(
                 [
-                "$this->base/themes/theme/templates/Page.ss",
-                "Page"
+                    "$this->base/themes/theme/templates/Page.ss",
+                    "Page"
                 ],
                 ['theme']
             )
         );
 
         // Ensure checks for file_exists
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/Page.ss",
             $this->loader->findTemplate(
                 [
-                "$this->base/themes/theme/templates/NotAPage.ss",
-                "$this->base/themes/theme/templates/Page.ss",
+                    "$this->base/themes/theme/templates/NotAPage.ss",
+                    "$this->base/themes/theme/templates/Page.ss",
                 ],
                 ['theme']
             )
@@ -189,14 +193,14 @@ class ThemeResourceLoaderTest extends SapphireTest
     /**
      * Test that 'main' and 'Layout' templates are loaded from set theme
      */
-    public function testFindTemplatesInTheme()
+    public function testFindTemplatesInTheme(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/Page.ss",
             $this->loader->findTemplate('Page', ['theme'])
         );
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/Layout/Page.ss",
             $this->loader->findTemplate(['type' => 'Layout', 'Page'], ['theme'])
         );
@@ -205,7 +209,7 @@ class ThemeResourceLoaderTest extends SapphireTest
     /**
      * Test that 'main' and 'Layout' templates are loaded from project without a set theme
      */
-    public function testFindTemplatesInApplication()
+    public function testFindTemplatesInApplication(UnitTester $I)
     {
         // TODO: replace with one that doesn't create temporary files (so bad)
         $templates = array(
@@ -214,12 +218,12 @@ class ThemeResourceLoaderTest extends SapphireTest
         );
         $this->createTestTemplates($templates);
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/myproject/templates/Page.ss",
             $this->loader->findTemplate('Page', ['$default'])
         );
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/myproject/templates/Layout/Page.ss",
             $this->loader->findTemplate(['type' => 'Layout', 'Page'], ['$default'])
         );
@@ -230,84 +234,70 @@ class ThemeResourceLoaderTest extends SapphireTest
     /**
      * Test that 'main' template is found in theme and 'Layout' is found in module
      */
-    public function testFindTemplatesMainThemeLayoutModule()
+    public function testFindTemplatesMainThemeLayoutModule(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/themes/theme/templates/CustomThemePage.ss",
             $this->loader->findTemplate('CustomThemePage', ['theme', '$default'])
         );
 
-        $this->assertEquals(
+        $I->assertEquals(
             "$this->base/module/templates/Layout/CustomThemePage.ss",
             $this->loader->findTemplate(['type' => 'Layout', 'CustomThemePage'], ['theme', '$default'])
         );
     }
 
-    public function testFindThemedCSS()
+    public function testFindThemedCSS(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             "myproject/css/project.css",
             $this->loader->findThemedCSS('project', ['$default', 'theme'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             "themes/theme/css/project.css",
             $this->loader->findThemedCSS('project', ['theme', '$default'])
         );
-        $this->assertEmpty(
+        $I->assertEmpty(
             $this->loader->findThemedCSS('nofile', ['theme', '$default'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/css/content.css',
             $this->loader->findThemedCSS('content', ['/module', 'theme'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/css/content.css',
             $this->loader->findThemedCSS('content', ['/module', 'theme', '$default'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/css/content.css',
             $this->loader->findThemedCSS('content', ['$default', '/module', 'theme'])
         );
     }
 
-    public function testFindThemedJavascript()
+    public function testFindThemedJavascript(UnitTester $I)
     {
-        $this->assertEquals(
+        $I->assertEquals(
             "myproject/javascript/project.js",
             $this->loader->findThemedJavascript('project', ['$default', 'theme'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             "themes/theme/javascript/project.js",
             $this->loader->findThemedJavascript('project', ['theme', '$default'])
         );
-        $this->assertEmpty(
+        $I->assertEmpty(
             $this->loader->findThemedJavascript('nofile', ['theme', '$default'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/javascript/content.js',
             $this->loader->findThemedJavascript('content', ['/module', 'theme'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/javascript/content.js',
             $this->loader->findThemedJavascript('content', ['/module', 'theme', '$default'])
         );
-        $this->assertEquals(
+        $I->assertEquals(
             'module/javascript/content.js',
             $this->loader->findThemedJavascript('content', ['$default', '/module', 'theme'])
         );
-    }
-
-    protected function createTestTemplates($templates)
-    {
-        foreach ($templates as $template) {
-            file_put_contents($template, '');
-        }
-    }
-
-    protected function removeTestTemplates($templates)
-    {
-        foreach ($templates as $template) {
-            unlink($template);
-        }
     }
 }
