@@ -1,25 +1,22 @@
 <?php
-
-namespace SilverStripe\Core\Tests\Startup;
-
+namespace Core\Startup;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\Session;
 use SilverStripe\Core\Startup\ParameterConfirmationToken;
 use SilverStripe\Core\Tests\Startup\ParameterConfirmationTokenTest\ParameterConfirmationTokenTest_Token;
 use SilverStripe\Core\Tests\Startup\ParameterConfirmationTokenTest\ParameterConfirmationTokenTest_ValidToken;
-use SilverStripe\Dev\SapphireTest;
+use \UnitTester;
 
-class ParameterConfirmationTokenTest extends SapphireTest
+class ParameterConfirmationTokenCest
 {
     /**
      * @var HTTPRequest
      */
     protected $request = null;
 
-    protected function setUp()
+    public function _before(UnitTester $I)
     {
-        parent::setUp();
         $get = [];
         $get['parameterconfirmationtokentest_notoken'] = 'value';
         $get['parameterconfirmationtokentest_empty'] = '';
@@ -34,7 +31,12 @@ class ParameterConfirmationTokenTest extends SapphireTest
         $this->request->setSession(new Session([]));
     }
 
-    public function testParameterDetectsParameters()
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testParameterDetectsParameters(UnitTester $I)
     {
         $withoutToken = new ParameterConfirmationTokenTest_Token('parameterconfirmationtokentest_notoken', $this->request);
         $emptyParameter = new ParameterConfirmationTokenTest_Token('parameterconfirmationtokentest_empty', $this->request);
@@ -45,66 +47,66 @@ class ParameterConfirmationTokenTest extends SapphireTest
         $backToken = new ParameterConfirmationTokenTest_Token('parameterconfirmationtokentest_backtoken', $this->request);
 
         // Check parameter
-        $this->assertTrue($withoutToken->parameterProvided());
-        $this->assertTrue($emptyParameter->parameterProvided());  // even if empty, it's still provided
-        $this->assertTrue($withToken->parameterProvided());
-        $this->assertFalse($withoutParameter->parameterProvided());
-        $this->assertTrue($nullToken->parameterProvided());
-        $this->assertTrue($emptyToken->parameterProvided());
-        $this->assertFalse($backToken->parameterProvided());
+        $I->assertTrue($withoutToken->parameterProvided());
+        $I->assertTrue($emptyParameter->parameterProvided());  // even if empty, it's still provided
+        $I->assertTrue($withToken->parameterProvided());
+        $I->assertFalse($withoutParameter->parameterProvided());
+        $I->assertTrue($nullToken->parameterProvided());
+        $I->assertTrue($emptyToken->parameterProvided());
+        $I->assertFalse($backToken->parameterProvided());
 
         // Check backurl
-        $this->assertFalse($withoutToken->existsInReferer());
-        $this->assertFalse($emptyParameter->existsInReferer());  // even if empty, it's still provided
-        $this->assertFalse($withToken->existsInReferer());
-        $this->assertFalse($withoutParameter->existsInReferer());
-        $this->assertFalse($nullToken->existsInReferer());
-        $this->assertFalse($emptyToken->existsInReferer());
-        $this->assertTrue($backToken->existsInReferer());
+        $I->assertFalse($withoutToken->existsInReferer());
+        $I->assertFalse($emptyParameter->existsInReferer());  // even if empty, it's still provided
+        $I->assertFalse($withToken->existsInReferer());
+        $I->assertFalse($withoutParameter->existsInReferer());
+        $I->assertFalse($nullToken->existsInReferer());
+        $I->assertFalse($emptyToken->existsInReferer());
+        $I->assertTrue($backToken->existsInReferer());
 
         // Check token
-        $this->assertFalse($withoutToken->tokenProvided());
-        $this->assertFalse($emptyParameter->tokenProvided());
-        $this->assertTrue($withToken->tokenProvided()); // Actually forced to true for this test
-        $this->assertFalse($withoutParameter->tokenProvided());
-        $this->assertFalse($nullToken->tokenProvided());
-        $this->assertFalse($emptyToken->tokenProvided());
-        $this->assertFalse($backToken->tokenProvided());
+        $I->assertFalse($withoutToken->tokenProvided());
+        $I->assertFalse($emptyParameter->tokenProvided());
+        $I->assertTrue($withToken->tokenProvided()); // Actually forced to true for this test
+        $I->assertFalse($withoutParameter->tokenProvided());
+        $I->assertFalse($nullToken->tokenProvided());
+        $I->assertFalse($emptyToken->tokenProvided());
+        $I->assertFalse($backToken->tokenProvided());
 
         // Check if reload is required
-        $this->assertTrue($withoutToken->reloadRequired());
-        $this->assertTrue($emptyParameter->reloadRequired());
-        $this->assertFalse($withToken->reloadRequired());
-        $this->assertFalse($withoutParameter->reloadRequired());
-        $this->assertTrue($nullToken->reloadRequired());
-        $this->assertTrue($emptyToken->reloadRequired());
-        $this->assertFalse($backToken->reloadRequired());
+        $I->assertTrue($withoutToken->reloadRequired());
+        $I->assertTrue($emptyParameter->reloadRequired());
+        $I->assertFalse($withToken->reloadRequired());
+        $I->assertFalse($withoutParameter->reloadRequired());
+        $I->assertTrue($nullToken->reloadRequired());
+        $I->assertTrue($emptyToken->reloadRequired());
+        $I->assertFalse($backToken->reloadRequired());
 
         // Check if a reload is required in case of error
-        $this->assertTrue($withoutToken->reloadRequiredIfError());
-        $this->assertTrue($emptyParameter->reloadRequiredIfError());
-        $this->assertFalse($withToken->reloadRequiredIfError());
-        $this->assertFalse($withoutParameter->reloadRequiredIfError());
-        $this->assertTrue($nullToken->reloadRequiredIfError());
-        $this->assertTrue($emptyToken->reloadRequiredIfError());
-        $this->assertTrue($backToken->reloadRequiredIfError());
+        $I->assertTrue($withoutToken->reloadRequiredIfError());
+        $I->assertTrue($emptyParameter->reloadRequiredIfError());
+        $I->assertFalse($withToken->reloadRequiredIfError());
+        $I->assertFalse($withoutParameter->reloadRequiredIfError());
+        $I->assertTrue($nullToken->reloadRequiredIfError());
+        $I->assertTrue($emptyToken->reloadRequiredIfError());
+        $I->assertTrue($backToken->reloadRequiredIfError());
 
         // Check redirect url
         $home = (BASE_URL ?: '/') . '?';
         $current = Controller::join_links(BASE_URL, '/', 'anotherpage'). '?';
-        $this->assertStringStartsWith($current, $withoutToken->redirectURL());
-        $this->assertStringStartsWith($current, $emptyParameter->redirectURL());
-        $this->assertStringStartsWith($current, $nullToken->redirectURL());
-        $this->assertStringStartsWith($current, $emptyToken->redirectURL());
-        $this->assertStringStartsWith($home, $backToken->redirectURL());
+        $I->assertStringStartsWith($current, $withoutToken->redirectURL());
+        $I->assertStringStartsWith($current, $emptyParameter->redirectURL());
+        $I->assertStringStartsWith($current, $nullToken->redirectURL());
+        $I->assertStringStartsWith($current, $emptyToken->redirectURL());
+        $I->assertStringStartsWith($home, $backToken->redirectURL());
 
         // Check suppression
-        $this->assertEquals('value', $this->request->getVar('parameterconfirmationtokentest_notoken'));
+        $I->assertEquals('value', $this->request->getVar('parameterconfirmationtokentest_notoken'));
         $withoutToken->suppress();
-        $this->assertNull($this->request->getVar('parameterconfirmationtokentest_notoken'));
+        $I->assertNull($this->request->getVar('parameterconfirmationtokentest_notoken'));
     }
 
-    public function testPrepareTokens()
+    public function testPrepareTokens(UnitTester $I)
     {
         // Test priority ordering
         $token = ParameterConfirmationToken::prepare_tokens(
@@ -116,22 +118,25 @@ class ParameterConfirmationTokenTest extends SapphireTest
             $this->request
         );
         // Test no invalid tokens
-        $this->assertEquals('parameterconfirmationtokentest_empty', $token->getName());
+        $I->assertEquals('parameterconfirmationtokentest_empty', $token->getName());
         $token = ParameterConfirmationToken::prepare_tokens(
             [ 'parameterconfirmationtokentest_noparam' ],
             $this->request
         );
-        $this->assertEmpty($token);
+        $I->assertEmpty($token);
 
         // Test backurl token
         $token = ParameterConfirmationToken::prepare_tokens(
             [ 'parameterconfirmationtokentest_backtoken' ],
             $this->request
         );
-        $this->assertEquals('parameterconfirmationtokentest_backtoken', $token->getName());
+        $I->assertEquals('parameterconfirmationtokentest_backtoken', $token->getName());
     }
 
-    public function dataProviderURLs()
+    /**
+     * @return array
+     */
+    protected function URLProvider()
     {
         return [
             [''],
@@ -149,10 +154,11 @@ class ParameterConfirmationTokenTest extends SapphireTest
      * There should always be exactly one slash between each part in the result, and any trailing slash
      * should be preserved.
      *
-     * @dataProvider dataProviderURLs
+     * @dataProvider URLProvider
      */
-    public function testCurrentAbsoluteURLHandlesSlashes($url)
+    public function testCurrentAbsoluteURLHandlesSlashes(UnitTester $I, \Codeception\Example $example)
     {
+        $url = $example[0];
         $this->request->setUrl($url);
 
         $token = new ParameterConfirmationTokenTest_Token(
@@ -160,6 +166,6 @@ class ParameterConfirmationTokenTest extends SapphireTest
             $this->request
         );
         $expected = rtrim(Controller::join_links(BASE_URL, '/', $url), '/') ?: '/';
-        $this->assertEquals($expected, $token->currentURL(), "Invalid redirect for request url $url");
+        $I->assertEquals($expected, $token->currentURL(), "Invalid redirect for request url $url");
     }
 }
