@@ -1,39 +1,36 @@
 <?php
+namespace Core\Startup;
+use SilverStripe\Core\Tests\Startup\ErrorControlChainTest\ErrorControlChainTest_Chain;
+use \UnitTester;
 
-namespace SilverStripe\Core\Tests\Startup;
-
-use Exception;
-use Foo;
-use SilverStripe\Core\Startup\ErrorControlChain;
-use SilverStripe\Dev\SapphireTest;
-
-class ErrorControlChainTest extends SapphireTest
+class ErrorControlChainCest
 {
-
-    protected function setUp()
+    public function _before(UnitTester $I, $scenario)
     {
-
         // Check we can run PHP at all
         $null = is_writeable('/dev/null') ? '/dev/null' : 'NUL';
         exec("php -v 2> $null", $out, $rv);
 
         if ($rv != 0) {
-            $this->markTestSkipped("Can't run PHP from the command line - is it in your path?");
+            $scenario->skip("Can't run PHP from the command line - is it in your path?");
         }
-
-        parent::setUp();
     }
 
-    public function testErrorSuppression()
+    public function _after(UnitTester $I)
+    {
+    }
+
+    // tests
+    public function testErrorSuppression(UnitTester $I)
     {
 
         // Errors disabled by default
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
         $chain->setDisplayErrors('Off'); // mocks display_errors: Off
         $initialValue = null;
         $whenNotSuppressed = null;
         $whenSuppressed = null;
-        $chain->then(function (ErrorControlChainTest\ErrorControlChainTest_Chain $chain) use (
+        $chain->then(function (ErrorControlChainTest_Chain $chain) use (
             &$initialValue,
             &$whenNotSuppressed,
             &$whenSuppressed
@@ -46,18 +43,18 @@ class ErrorControlChainTest extends SapphireTest
         })->execute();
 
         // Disabled errors never un-disable
-        $this->assertEquals(0, $initialValue); // Chain starts suppressed
-        $this->assertEquals(0, $whenSuppressed); // false value used internally when suppressed
-        $this->assertEquals('Off', $whenNotSuppressed); // false value set by php ini when suppression lifted
-        $this->assertEquals('Off', $chain->getDisplayErrors()); // Correctly restored after run
+        $I->assertEquals(0, $initialValue); // Chain starts suppressed
+        $I->assertEquals(0, $whenSuppressed); // false value used internally when suppressed
+        $I->assertEquals('Off', $whenNotSuppressed); // false value set by php ini when suppression lifted
+        $I->assertEquals('Off', $chain->getDisplayErrors()); // Correctly restored after run
 
         // Errors enabled by default
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
         $chain->setDisplayErrors('Yes'); // non-falsey ini value
         $initialValue = null;
         $whenNotSuppressed = null;
         $whenSuppressed = null;
-        $chain->then(function (ErrorControlChainTest\ErrorControlChainTest_Chain $chain) use (
+        $chain->then(function (ErrorControlChainTest_Chain $chain) use (
             &$initialValue,
             &$whenNotSuppressed,
             &$whenSuppressed
@@ -70,13 +67,13 @@ class ErrorControlChainTest extends SapphireTest
         })->execute();
 
         // Errors can be suppressed an un-suppressed when initially enabled
-        $this->assertEquals(0, $initialValue); // Chain starts suppressed
-        $this->assertEquals(0, $whenSuppressed); // false value used internally when suppressed
-        $this->assertEquals('Yes', $whenNotSuppressed); // false value set by php ini when suppression lifted
-        $this->assertEquals('Yes', $chain->getDisplayErrors()); // Correctly restored after run
+        $I->assertEquals(0, $initialValue); // Chain starts suppressed
+        $I->assertEquals(0, $whenSuppressed); // false value used internally when suppressed
+        $I->assertEquals('Yes', $whenNotSuppressed); // false value set by php ini when suppression lifted
+        $I->assertEquals('Yes', $chain->getDisplayErrors()); // Correctly restored after run
 
         // Fatal error
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -87,11 +84,11 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
 
         // User error
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -102,11 +99,11 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
 
         // Recoverable error
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -119,11 +116,11 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
 
         // Memory exhaustion
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -138,11 +135,11 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
 
         // Exceptions
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -153,12 +150,12 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
     }
 
-    public function testExceptionSuppression()
+    public function testExceptionSuppression(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -169,12 +166,12 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals('Done', $out);
+        $I->assertEquals('Done', $out);
     }
 
-    public function testErrorControl()
+    public function testErrorControl(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -200,17 +197,17 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertEquals(
+        $I->assertEquals(
             "preThen,preThenAlways,postThenIfErrored,postThenAlways,",
             $out
         );
     }
 
-    public function testSuppressionControl()
+    public function testSuppressionControl(UnitTester $I)
     {
         // Turning off suppression before execution
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
         $chain->setSuppression(false);
 
         list($out, $code) = $chain
@@ -219,12 +216,12 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess(true);
 
-        $this->assertContains('Fatal error', $out);
-        $this->assertContains('Foo', $out);
+        $I->assertContains('Fatal error', $out);
+        $I->assertContains('Foo', $out);
 
         // Turning off suppression during execution
 
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function ($chain) {
@@ -233,13 +230,13 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess(true);
 
-        $this->assertContains('Fatal error', $out);
-        $this->assertContains('Foo', $out);
+        $I->assertContains('Fatal error', $out);
+        $I->assertContains('Foo', $out);
     }
 
-    public function testDoesntAffectNonFatalErrors()
+    public function testDoesntAffectNonFatalErrors(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -256,12 +253,12 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertContains("Good", $out);
+        $I->assertContains("Good", $out);
     }
 
-    public function testDoesntAffectCaughtExceptions()
+    public function testDoesntAffectCaughtExceptions(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -276,12 +273,12 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertContains("Good", $out);
+        $I->assertContains("Good", $out);
     }
 
-    public function testDoesntAffectHandledErrors()
+    public function testDoesntAffectHandledErrors(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
         list($out, $code) = $chain
             ->then(function () {
@@ -300,26 +297,26 @@ class ErrorControlChainTest extends SapphireTest
             })
             ->executeInSubprocess();
 
-        $this->assertContains("Good", $out);
+        $I->assertContains("Good", $out);
     }
 
-    public function testMemoryConversion()
+    public function testMemoryConversion(UnitTester $I)
     {
-        $chain = new ErrorControlChainTest\ErrorControlChainTest_Chain();
+        $chain = new ErrorControlChainTest_Chain();
 
-        $this->assertEquals(200, $chain->translateMemstring('200'));
-        $this->assertEquals(300, $chain->translateMemstring('300'));
+        $I->assertEquals(200, $chain->translateMemstring('200'));
+        $I->assertEquals(300, $chain->translateMemstring('300'));
 
-        $this->assertEquals(2 * 1024, $chain->translateMemstring('2k'));
-        $this->assertEquals(3 * 1024, $chain->translateMemstring('3K'));
+        $I->assertEquals(2 * 1024, $chain->translateMemstring('2k'));
+        $I->assertEquals(3 * 1024, $chain->translateMemstring('3K'));
 
-        $this->assertEquals(2 * 1024 * 1024, $chain->translateMemstring('2m'));
-        $this->assertEquals(3 * 1024 * 1024, $chain->translateMemstring('3M'));
+        $I->assertEquals(2 * 1024 * 1024, $chain->translateMemstring('2m'));
+        $I->assertEquals(3 * 1024 * 1024, $chain->translateMemstring('3M'));
 
-        $this->assertEquals(2 * 1024 * 1024 * 1024, $chain->translateMemstring('2g'));
-        $this->assertEquals(3 * 1024 * 1024 * 1024, $chain->translateMemstring('3G'));
+        $I->assertEquals(2 * 1024 * 1024 * 1024, $chain->translateMemstring('2g'));
+        $I->assertEquals(3 * 1024 * 1024 * 1024, $chain->translateMemstring('3G'));
 
-        $this->assertEquals(200, $chain->translateMemstring('200foo'));
-        $this->assertEquals(300, $chain->translateMemstring('300foo'));
+        $I->assertEquals(200, $chain->translateMemstring('200foo'));
+        $I->assertEquals(300, $chain->translateMemstring('300foo'));
     }
 }
