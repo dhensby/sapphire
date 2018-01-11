@@ -65,7 +65,7 @@ class ClassInfo
      */
     public static function allClasses()
     {
-        return ClassLoader::inst()->getManifest()->getClassNames();
+        return ClassLoader::inst()->getClassNames();
     }
 
     /**
@@ -195,7 +195,7 @@ class ClassInfo
         $lowerClassName = strtolower($className);
 
         // Merge with descendants
-        $descendants = ClassLoader::inst()->getManifest()->getDescendantsOf($className);
+        $descendants = ClassLoader::inst()->getDescendantsOf($className);
         return array_merge(
             [$lowerClassName => $className],
             $descendants
@@ -219,7 +219,7 @@ class ClassInfo
         $key = strtolower($nameOrObject);
         if (!isset(static::$_cache_class_names[$key])) {
             // Get manifest name
-            $name = ClassLoader::inst()->getManifest()->getItemName($nameOrObject);
+            $name = ClassLoader::inst()->getItemName($nameOrObject);
 
             // Use reflection for non-manifest classes
             if (!$name) {
@@ -272,7 +272,7 @@ class ClassInfo
      */
     public static function implementorsOf($interfaceName)
     {
-        return ClassLoader::inst()->getManifest()->getImplementorsOf($interfaceName);
+        return ClassLoader::inst()->getImplementorsOf($interfaceName);
     }
 
     /**
@@ -298,7 +298,7 @@ class ClassInfo
     public static function classes_for_file($filePath)
     {
         $absFilePath = Director::getAbsFile($filePath);
-        $classManifest = ClassLoader::inst()->getManifest();
+        $classManifest = ClassLoader::inst();
         $classes = $classManifest->getClasses();
         $classNames = $classManifest->getClassNames();
 
@@ -321,7 +321,7 @@ class ClassInfo
     public static function classes_for_folder($folderPath)
     {
         $absFolderPath = Director::getAbsFile($folderPath);
-        $classManifest = ClassLoader::inst()->getManifest();
+        $classManifest = ClassLoader::inst();
         $classes = $classManifest->getClasses();
         $classNames = $classManifest->getClassNames();
 

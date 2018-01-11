@@ -33,6 +33,32 @@ class ClassLoader
         return self::$instance ? self::$instance : self::$instance = new static();
     }
 
+    protected function recurseThroughManifests($method, $args)
+    {
+        $combinedResult = null;
+        foreach (array_reverse($this->manifests) as $manifest) {
+            /** @var ClassManifest $manifestInst */
+            $manifestInst = $manifest['instance'];
+            $result = call_user_func_array([$manifestInst, $method], $args);
+            if ($combinedResult === null) {
+                $combinedResult = $result;
+            } elseif (is_array($result)) {
+                $combinedResult = array_merge($result, $combinedResult);
+            } else {
+                $combinedResult = $result;
+            }
+            if ($manifest['exclusive']) {
+                return $combinedResult;
+            }
+        }
+        return $combinedResult;
+    }
+
+    public function __call($method, $args)
+    {
+        return $this->recurseThroughManifests($method, $args);
+    }
+
     /**
      * Returns the currently active class manifest instance that is used for
      * loading classes.
@@ -91,28 +117,6 @@ class ClassLoader
             require_once $path;
         }
         return $path;
-    }
-
-    /**
-     * Returns the path for a class or interface in the currently active manifest,
-     * or any previous ones if later manifests aren't set to "exclusive".
-     *
-     * @param string $class
-     * @return string|false
-     */
-    public function getItemPath($class)
-    {
-        foreach (array_reverse($this->manifests) as $manifest) {
-            /** @var ClassManifest $manifestInst */
-            $manifestInst = $manifest['instance'];
-            if ($path = $manifestInst->getItemPath($class)) {
-                return $path;
-            }
-            if ($manifest['exclusive']) {
-                break;
-            }
-        }
-        return false;
     }
 
     /**

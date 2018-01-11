@@ -5,6 +5,7 @@ namespace SilverStripe\Dev;
 use Exception;
 use LogicException;
 use PHPUnit_Framework_Constraint_Not;
+use PHPUnit_Framework_MockObject_MockObject;
 use PHPUnit_Framework_TestCase;
 use PHPUnit_Util_InvalidArgumentHelper;
 use SilverStripe\CMS\Controllers\RootURLController;
@@ -20,6 +21,8 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Injector\InjectorLoader;
 use SilverStripe\Core\Manifest\ClassLoader;
+use SilverStripe\Core\Manifest\ClassManifest;
+use SilverStripe\Core\Manifest\MockClassManifest;
 use SilverStripe\Dev\Constraint\SSListContains;
 use SilverStripe\Dev\Constraint\SSListContainsOnly;
 use SilverStripe\Dev\Constraint\SSListContainsOnlyMatchingItems;
@@ -228,6 +231,8 @@ class SapphireTest extends PHPUnit_Framework_TestCase implements TestOnly
         // Call state helpers
         static::$state->setUp($this);
 
+        ClassLoader::inst()->pushManifest(new MockClassManifest(), false);
+
         // We cannot run the tests on this abstract class.
         if (static::class == __CLASS__) {
             $this->markTestSkipped(sprintf('Skipping %s ', static::class));
@@ -292,7 +297,17 @@ class SapphireTest extends PHPUnit_Framework_TestCase implements TestOnly
         Email::config()->remove('bcc_all_emails_to');
     }
 
-
+    /**
+     * @param PHPUnit_Framework_MockObject_MockObject $mockObject
+     */
+    public function registerMockObject(PHPUnit_Framework_MockObject_MockObject $mockObject)
+    {
+        parent::registerMockObject($mockObject);
+        $manifest = ClassLoader::inst()->getManifest();
+        if ($manifest instanceof MockClassManifest) {
+            $manifest->registerMockObject($mockObject);
+        }
+    }
 
     /**
      * Helper method to determine if the current test should enable a test database
@@ -543,6 +558,8 @@ class SapphireTest extends PHPUnit_Framework_TestCase implements TestOnly
             $response->setStatusCode(200);
             $response->removeHeader('Location');
         }
+
+        ClassLoader::inst()->popManifest();
 
         // Call state helpers
         static::$state->tearDown($this);

@@ -536,6 +536,8 @@ trait Extensible
      * This method also provides lazy-population of the extension_instances property.
      *
      * @return Extension[] Map of {@link DataExtension} instances, keyed by classname.
+     * @throws \Exception
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function getExtensionInstances()
     {
