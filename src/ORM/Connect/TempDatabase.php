@@ -139,7 +139,7 @@ class TempDatabase
         // Create a temporary database, and force the connection to use UTC for time
         $dbConn = $this->getConn();
         $prefix = Environment::getEnv('SS_DATABASE_PREFIX') ?: 'ss_';
-        $dbList = $dbConn->getSchemaManager()->listDatabases()
+        $dbList = $dbConn->getSchemaManager()->listDatabases();
         do {
             $dbname = strtolower(sprintf('%stmpdb_%s_%s', $prefix, time(), rand(1000000, 9999999)));
         } while (in_array($dbname, $dbList));
@@ -150,7 +150,7 @@ class TempDatabase
 
         $config = DB::getConfig($this->name);
         $config['dbname'] = $dbname;
-        DB::setConfig($this->name, $config);
+        DB::setConfig($config, $this->name);
 
         $this->resetDBSchema();
 

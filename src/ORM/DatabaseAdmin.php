@@ -264,7 +264,8 @@ class DatabaseAdmin extends Controller
             } catch (\Exception $e) {
                 die($e->getMessage());
             }
-            $conn->executeQuery('USE ' . $conn->quoteIdentifier($database));
+            $conn->close();
+            DB::setConfig($parameters);
         }
 
         if (!$quiet) {

@@ -6,7 +6,6 @@ use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
-use BadMethodCallException;
 use InvalidArgumentException;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPRequest;
@@ -262,7 +261,9 @@ class DB
      * @param array $databaseConfig A map of options. The 'type' is the name of the
      * driver to use. For the rest of the options, see the specific class.
      * @param string $label identifier for the connection
+     *
      * @return \Doctrine\DBAL\Connection
+     * @throws DBALException
      */
     public static function connect($databaseConfig, $label = 'default')
     {
@@ -270,10 +271,6 @@ class DB
         // This is used by the "testsession" module to test up a test session using an alternative name
         if ($name = self::get_alternative_database_name()) {
             $databaseConfig['dbname'] = $name;
-        }
-
-        if (!isset($databaseConfig['type']) || empty($databaseConfig['type'])) {
-            throw new InvalidArgumentException("DB::connect: Not passed a valid database config");
         }
 
         $conn = DriverManager::getConnection($databaseConfig);

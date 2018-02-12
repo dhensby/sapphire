@@ -223,11 +223,11 @@ class CoreKernel implements Kernel
         // Case 1: $databaseConfig global exists. Merge $database in as needed
         if (!empty($databaseConfig)) {
             if (!empty($database)) {
-                $databaseConfig['database'] =  $this->getDatabasePrefix() . $database;
+                $databaseConfig['dbname'] =  $this->getDatabasePrefix() . $database;
             }
 
             // Only set it if its valid, otherwise ignore $databaseConfig entirely
-            if (!empty($databaseConfig['database'])) {
+            if (!empty($databaseConfig['dbname'])) {
                 DB::setConfig($databaseConfig);
 
                 return;
@@ -237,7 +237,7 @@ class CoreKernel implements Kernel
         // Case 2: $database merged into existing config
         if (!empty($database)) {
             $existing = DB::getConfig();
-            $existing['database'] = $this->getDatabasePrefix() . $database;
+            $existing['dbname'] = $this->getDatabasePrefix() . $database;
 
             DB::setConfig($existing);
         }
@@ -250,7 +250,7 @@ class CoreKernel implements Kernel
     {
         // Set default database config
         $databaseConfig = $this->getDatabaseConfig();
-        $databaseConfig['database'] = $this->getDatabaseName();
+        $databaseConfig['dbname'] = $this->getDatabaseName();
         DB::setConfig($databaseConfig);
     }
 
@@ -263,7 +263,7 @@ class CoreKernel implements Kernel
     {
         $databaseConfig = DB::getConfig();
         // Gracefully fail if no DB is configured
-        if (empty($databaseConfig['database'])) {
+        if (empty($databaseConfig['dbname'])) {
             $this->detectLegacyEnvironment();
             $this->redirectToInstaller();
         }
@@ -331,9 +331,9 @@ class CoreKernel implements Kernel
     {
         /** @skipUpgrade */
         $databaseConfig = [
-            "type" => Environment::getEnv('SS_DATABASE_CLASS') ?: 'MySQLDatabase',
-            "server" => Environment::getEnv('SS_DATABASE_SERVER') ?: 'localhost',
-            "username" => Environment::getEnv('SS_DATABASE_USERNAME') ?: null,
+            "driver" => Environment::getEnv('SS_DATABASE_CLASS') ?: 'pdo_mysql',
+            "host " => Environment::getEnv('SS_DATABASE_SERVER') ?: 'localhost',
+            "user" => Environment::getEnv('SS_DATABASE_USERNAME') ?: null,
             "password" => Environment::getEnv('SS_DATABASE_PASSWORD') ?: null,
         ];
 
