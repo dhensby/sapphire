@@ -22,5 +22,5 @@ class Product extends DataObject implements TestOnly
         'Categories' => Category::class
     );
 
-    private static $default_sort = '"Title" IS NOT NULL ASC, "Title" ASC';
+    private static $default_sort = 'Title IS NOT NULL ASC, Title ASC';
 }

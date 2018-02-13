@@ -2241,11 +2241,10 @@ class DataObjectTest extends SapphireTest
 
     public function testGetOneMissingValueReturnsNull()
     {
-
         // Test that missing values return null
         $this->assertEquals(null, DataObject::get_one(
             DataObjectTest\TeamComment::class,
-            ['"DataObjectTest_TeamComment"."Name"' => 'does not exists']
+            ['DataObjectTest_TeamComment.Name' => 'does not exists']
         ));
     }
 }

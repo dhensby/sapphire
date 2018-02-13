@@ -2,6 +2,7 @@
 
 namespace SilverStripe\ORM\Connect;
 
+use Doctrine\DBAL\Schema\Schema;
 use Exception;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Convert;
@@ -151,6 +152,7 @@ class TempDatabase
         $config = DB::getConfig($this->name);
         $config['dbname'] = $dbname;
         DB::setConfig($config, $this->name);
+        DB::connect($config, $this->name);
 
         $this->resetDBSchema();
 
@@ -181,7 +183,6 @@ class TempDatabase
         foreach ($schema->listDatabases() as $dbName) {
             if ($this->isDBTemp($dbName)) {
                 $schema->dropDatabase($dbName);
-                $schema->alterationMessage("Dropped database \"$dbName\"", 'deleted');
                 flush();
             }
         }

@@ -385,7 +385,7 @@ class DB
             } elseif (is_int($next)) {
                 $value = $next;
             } else {
-                $value = DB::is_active() ? Convert::raw2sql($next, true) : $next;
+                $value = DB::get_conn()->isConnected() ? Convert::raw2sql($next, true) : $next;
             }
             $joined .= $value;
         }
@@ -446,6 +446,8 @@ class DB
      * @todo Update this to support paramaterised queries
      *
      * @param array $manipulation
+     *
+     * @throws \Exception
      */
     public static function manipulate($manipulation)
     {

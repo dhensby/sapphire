@@ -90,7 +90,7 @@ class ClassInfo
     public static function hasTable($tableName)
     {
         // Cache the list of all table names to reduce on DB traffic
-        if (empty(self::$_cache_all_tables) && DB::is_active()) {
+        if (empty(self::$_cache_all_tables)) {
             self::$_cache_all_tables = DB::table_list();
         }
         return !empty(self::$_cache_all_tables[strtolower($tableName)]);

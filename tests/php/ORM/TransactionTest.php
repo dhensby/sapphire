@@ -51,7 +51,7 @@ class TransactionTest extends SapphireTest
 
     public function testCreateWithTransaction()
     {
-        DB::get_conn()->transactionStart();
+        DB::get_conn()->beginTransaction();
         $obj = new TransactionTest\TestObject();
         $obj->Title = 'First page';
         $obj->write();
@@ -61,7 +61,7 @@ class TransactionTest extends SapphireTest
         $obj->write();
 
         //Create a savepoint here:
-        DB::get_conn()->transactionSavepoint('rollback');
+        DB::get_conn()->createSavepoint('rollback');
 
         $obj = new TransactionTest\TestObject();
         $obj->Title = 'Third page';
@@ -72,14 +72,14 @@ class TransactionTest extends SapphireTest
         $obj->write();
 
         //Revert to a savepoint:
-        DB::get_conn()->transactionRollback('rollback');
+        DB::get_conn()->rollbackSavepoint('rollback');
 
-        DB::get_conn()->transactionEnd();
+        DB::get_conn()->commit();
 
-        $first = DataObject::get(TransactionTest\TestObject::class, "\"Title\"='First page'");
-        $second = DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Second page'");
-        $third = DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Third page'");
-        $fourth = DataObject::get(TransactionTest\TestObject::class, "\"Title\"='Fourth page'");
+        $first = DataObject::get(TransactionTest\TestObject::class, "Title='First page'");
+        $second = DataObject::get(TransactionTest\TestObject::class, "Title='Second page'");
+        $third = DataObject::get(TransactionTest\TestObject::class, "Title='Third page'");
+        $fourth = DataObject::get(TransactionTest\TestObject::class, "Title='Fourth page'");
 
         //These pages should be in the system
         $this->assertTrue(is_object($first) && $first->exists());
