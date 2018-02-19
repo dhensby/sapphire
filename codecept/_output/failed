@@ -1,0 +1,4 @@
+codecept/unit/Core/ConvertCest.php:testHtml2raw
+codecept/unit/Core/Manifest/ClassContentRemoverCest.php:testRemoveClassContent
+codecept/unit/Core/Manifest/ClassContentRemoverCest.php:testRemoveClassContentConditional
+codecept/unit/Core/Manifest/ClassContentRemoverCest.php:testRemoveClassContentSillyMethod

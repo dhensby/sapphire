@@ -548,41 +548,6 @@ class SapphireTest extends TestCase implements TestOnly
         static::$state->tearDown($this);
     }
 
-    public static function assertContains(
-        $needle,
-        $haystack,
-        string $message = '',
-        bool $ignoreCase = false,
-        bool $checkForObjectIdentity = true,
-        bool $checkForNonObjectIdentity = false
-    ) : void {
-        if ($haystack instanceof DBField) {
-            $haystack = (string)$haystack;
-        }
-        parent::assertContains(
-            $needle,
-            $haystack,
-            $message,
-            $ignoreCase,
-            $checkForObjectIdentity,
-            $checkForNonObjectIdentity
-        );
-    }
-
-    public static function assertNotContains(
-        $needle,
-        $haystack,
-        string $message = '',
-        bool $ignoreCase = false,
-        bool $checkForObjectIdentity = true,
-        bool $checkForNonObjectIdentity = false
-    ) : void {
-        if ($haystack instanceof DBField) {
-            $haystack = (string)$haystack;
-        }
-        parent::assertNotContains($needle, $haystack, $message, $ignoreCase, $checkForObjectIdentity, $checkForNonObjectIdentity);
-    }
-
     /**
      * Clear the log of emails sent
      *
