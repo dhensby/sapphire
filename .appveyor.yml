@@ -61,4 +61,4 @@ install:
   - php ./tests/dump_constants.php
 
 test_script:
-  - vendor/bin/phpunit
+  - vendor/bin/phpunit -d memory_limit=2048M --testsuite framework
