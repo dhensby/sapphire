@@ -45,15 +45,12 @@ install:
   - IF %PHP%==1 echo extension_dir=ext >> php.ini
   - IF %PHP%==1 echo extension=php_openssl.dll >> php.ini
   - IF %PHP%==1 echo date.timezone="UTC" >> php.ini
-  - IF %PHP%==1 echo memory_limit="2048M" >> php.ini
+  - IF %PHP%==1 echo memory_limit = 2048M >> php.ini
   - IF %PHP%==1 echo extension=php_mbstring.dll >> php.ini
   - IF %PHP%==1 echo extension=php_intl.dll >> php.ini
   - IF %PHP%==1 echo extension=php_fileinfo.dll >> php.ini
   - IF %PHP%==1 echo extension=php_curl.dll >> php.ini
   - IF %PHP%==1 echo extension=php_pdo_mysql.dll >> php.ini
-  - IF %PHP%==1 echo extension=php_pdo_pgsql.dll >> php.ini
-  - IF %PHP%==1 echo extension=php_pdo_sqlite.dll >> php.ini
-  - IF %PHP%==1 echo extension=php_pgsql.dll >> php.ini
   - cat php.ini
   - SET PATH=C:\tools\php71;%PATH%
   - cd %APPVEYOR_BUILD_FOLDER%
@@ -63,4 +60,4 @@ install:
   - php ./tests/dump_constants.php
 
 test_script:
-  - vendor/bin/phpunit --testsuite framework
+  - vendor/bin/phpunit --testsuite framework --stop-on-error
