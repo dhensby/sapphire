@@ -45,6 +45,7 @@ install:
   - IF %PHP%==1 echo extension_dir=ext >> php.ini
   - IF %PHP%==1 echo extension=php_openssl.dll >> php.ini
   - IF %PHP%==1 echo date.timezone="UTC" >> php.ini
+  - IF %PHP%==1 echo memory_limit="2048M" >> php.ini
   - IF %PHP%==1 echo extension=php_mbstring.dll >> php.ini
   - IF %PHP%==1 echo extension=php_intl.dll >> php.ini
   - IF %PHP%==1 echo extension=php_fileinfo.dll >> php.ini
@@ -61,4 +62,4 @@ install:
   - php ./tests/dump_constants.php
 
 test_script:
-  - vendor/bin/phpunit -d memory_limit=2048M --testsuite framework
+  - vendor/bin/phpunit --testsuite framework
