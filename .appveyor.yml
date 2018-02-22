@@ -54,6 +54,7 @@ install:
   - IF %PHP%==1 echo extension=php_pdo_pgsql.dll >> php.ini
   - IF %PHP%==1 echo extension=php_pdo_sqlite.dll >> php.ini
   - IF %PHP%==1 echo extension=php_pgsql.dll >> php.ini
+  - cat php.ini
   - SET PATH=C:\tools\php71;%PATH%
   - cd %APPVEYOR_BUILD_FOLDER%
   - appveyor DownloadFile https://getcomposer.org/composer.phar
