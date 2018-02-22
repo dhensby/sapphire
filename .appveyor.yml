@@ -41,7 +41,7 @@ install:
   - IF %PHP%==1 cd c:\tools\php71
   - IF %PHP%==1 cd ext
   - IF %PHP%==1 cd ..
-  - IF %PHP%==1 copy php.ini-production php.ini
+  - IF %PHP%==1 copy php.ini-development php.ini
   - IF %PHP%==1 echo extension_dir=ext >> php.ini
   - IF %PHP%==1 echo extension=php_openssl.dll >> php.ini
   - IF %PHP%==1 echo date.timezone="UTC" >> php.ini

@@ -8,4 +8,7 @@ $constants = get_defined_constants(true);
 foreach ($constants['user'] as $name => $value) {
     echo " - {$name}: '{$value}'\n";
 }
+
+echo "Memory limit: " . \SilverStripe\Core\Environment::getMemoryLimitMax();
+
 echo "==============================\n";
