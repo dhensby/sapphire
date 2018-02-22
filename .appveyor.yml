@@ -60,4 +60,4 @@ install:
   - php ./tests/dump_constants.php
 
 test_script:
-  - vendor/bin/phpunit --testsuite framework
+  - php vendor/bin/phpunit --testsuite framework
