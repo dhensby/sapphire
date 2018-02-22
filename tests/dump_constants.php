@@ -11,4 +11,4 @@ foreach ($constants['user'] as $name => $value) {
 
 echo "Memory limit: " . \SilverStripe\Core\Environment::getMemoryLimitMax();
 
-echo "==============================\n";
+echo "\n==============================\n";
