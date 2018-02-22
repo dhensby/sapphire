@@ -4,6 +4,7 @@ platform: 'x86'
 
 cache:
   - c:\tools\php71 -> appveyor.yml
+  - '%LOCALAPPDATA%\Composer\files'
 
 services:
   - mysql
@@ -54,7 +55,10 @@ install:
   - SET PATH=C:\tools\php71;%PATH%
   - cd %APPVEYOR_BUILD_FOLDER%
   - appveyor DownloadFile https://getcomposer.org/composer.phar
+  - php composer.phar require silverstripe/recipe-core:1.2.x-dev silverstripe/admin:1.2.x-dev silverstripe/versioned:1.2.x-dev --no-update
   - php composer.phar install --prefer-dist --no-interaction --no-progress --no-suggest --optimize-autoloader --verbose --profile
+  - php ./tests/dump_constants.php
 
 test_script:
-  - vendor/bin/phpunit tests/php/
+  - dir tests
+  - vendor/bin/phpunit
