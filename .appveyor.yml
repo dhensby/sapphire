@@ -47,6 +47,7 @@ install:
   - IF %PHP%==1 echo date.timezone="UTC" >> php.ini
   - IF %PHP%==1 echo extension=php_mbstring.dll >> php.ini
   - IF %PHP%==1 echo extension=php_intl.dll >> php.ini
+  - IF %PHP%==1 echo extension=php_fileinfo.dll >> php.ini
   - IF %PHP%==1 echo extension=php_curl.dll >> php.ini
   - IF %PHP%==1 echo extension=php_pdo_mysql.dll >> php.ini
   - IF %PHP%==1 echo extension=php_pdo_pgsql.dll >> php.ini
