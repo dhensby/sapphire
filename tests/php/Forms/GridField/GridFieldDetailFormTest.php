@@ -286,8 +286,11 @@ class GridFieldDetailFormTest extends FunctionalTest
         $this->logInWithPermission('ADMIN');
 
         $group = $this->objFromFixture(PeopleGroup::class, 'group');
+        $this->assertEquals(1, $group->ID);
         $person = $group->People()->First();
+        $this->assertTrue(in_array($person->ID, [1, 2]));
         $category = $person->Categories()->First();
+        $this->assertEquals(1, $category->ID);
 
         // Get first form (GridField managing PeopleGroup)
         $response = $this->get('GridFieldDetailFormTest_GroupController');
@@ -306,39 +309,55 @@ class GridFieldDetailFormTest extends FunctionalTest
         // Get second level form (GridField managing Person)
         $response = $this->get((string)$groupEditLink[0]['href']);
         $this->assertFalse($response->isError());
+        $this->assertTrue($person->isInDB());
         $parser = new CSSContentParser($response->getBody());
         $personEditLink = $parser->getByXpath(
             '//fieldset[@id="Form_ItemEditForm_People"]' .
             '//tr[contains(@class, "ss-gridfield-item") and contains(@data-id, "' . $person->ID . '")]//a'
         );
-        $this->assertEquals(
-            sprintf(
-                'GridFieldDetailFormTest_GroupController/Form/field/testfield/item/%d/ItemEditForm/field/People'
-                . '/item/%d/edit',
-                $group->ID,
-                $person->ID
-            ),
-            (string)$personEditLink[0]['href']
-        );
+        try {
+            $this->assertEquals(
+                sprintf(
+                    'GridFieldDetailFormTest_GroupController/Form/field/testfield/item/%s/ItemEditForm/field/People'
+                    . '/item/%s/edit',
+                    $group->ID,
+                    $person->ID
+                ),
+                (string)$personEditLink[0]['href']
+            );
+        } finally {
+            var_export([
+                $response->getBody(),
+                $person->ID,
+            ]);
+        }
 
         // Get third level form (GridField managing Category)
         $response = $this->get((string)$personEditLink[0]['href']);
         $this->assertFalse($response->isError());
+        $this->assertTrue($category->isInDB());
         $parser = new CSSContentParser($response->getBody());
         $categoryEditLink = $parser->getByXpath(
             '//fieldset[@id="Form_ItemEditForm_Categories"]'
             . '//tr[contains(@class, "ss-gridfield-item") and contains(@data-id, "' . $category->ID . '")]//a'
         );
-        $this->assertEquals(
-            sprintf(
-                'GridFieldDetailFormTest_GroupController/Form/field/testfield/item/%d/ItemEditForm/field/People'
-                . '/item/%d/ItemEditForm/field/Categories/item/%d/edit',
-                $group->ID,
-                $person->ID,
-                $category->ID
-            ),
-            (string)$categoryEditLink[0]['href']
-        );
+        try {
+            $this->assertEquals(
+                sprintf(
+                    'GridFieldDetailFormTest_GroupController/Form/field/testfield/item/%s/ItemEditForm/field/People'
+                    . '/item/%s/ItemEditForm/field/Categories/item/%s/edit',
+                    $group->ID,
+                    $person->ID,
+                    $category->ID
+                ),
+                (string)$categoryEditLink[0]['href']
+            );
+        } finally {
+            var_export([
+                $response->getBody(),
+                $category->ID,
+            ]);
+        }
 
         // Fourth level form would be a Category detail view
     }

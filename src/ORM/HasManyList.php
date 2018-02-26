@@ -70,7 +70,7 @@ class HasManyList extends RelationList
      */
     public function add($item)
     {
-        if (is_numeric($item)) {
+        if (!is_object($item)) {
             $item = DataObject::get_by_id($this->dataClass, $item);
         } elseif (!($item instanceof $this->dataClass)) {
             user_error("HasManyList::add() expecting a $this->dataClass object, or ID value", E_USER_ERROR);

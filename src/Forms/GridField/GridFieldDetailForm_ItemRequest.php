@@ -219,16 +219,16 @@ class GridFieldDetailForm_ItemRequest extends RequestHandler
             $this->component->getValidator()
         );
 
-        $form->loadDataFrom($this->record, $this->record->ID == 0 ? Form::MERGE_IGNORE_FALSEISH : Form::MERGE_DEFAULT);
+        $form->loadDataFrom($this->record, !$this->record->isInDB() ? Form::MERGE_IGNORE_FALSEISH : Form::MERGE_DEFAULT);
 
-        if ($this->record->ID && !$canEdit) {
+        if ($this->record->isInDB() && !$canEdit) {
             // Restrict editing of existing records
             $form->makeReadonly();
             // Hack to re-enable delete button if user can delete
             if ($canDelete) {
                 $form->Actions()->fieldByName('action_doDelete')->setReadonly(false);
             }
-        } elseif (!$this->record->ID && !$canCreate) {
+        } elseif (!$this->record->isInDB() && !$canCreate) {
             // Restrict creation of new records
             $form->makeReadonly();
         }
@@ -382,7 +382,7 @@ class GridFieldDetailForm_ItemRequest extends RequestHandler
 
     public function doSave($data, $form)
     {
-        $isNewRecord = $this->record->ID == 0;
+        $isNewRecord = !$this->record->isInDB();
 
         // Check permission
         if (!$this->record->canEdit()) {
@@ -589,7 +589,7 @@ class GridFieldDetailForm_ItemRequest extends RequestHandler
         /** @var ArrayList $items */
         $items = $this->popupController->Breadcrumbs($unlinked);
 
-        if ($this->record && $this->record->ID) {
+        if ($this->record && $this->record->isInDB()) {
             $title = ($this->record->Title) ? $this->record->Title : "#{$this->record->ID}";
             $items->push(new ArrayData(array(
                 'Title' => $title,

@@ -10,7 +10,7 @@ use SilverStripe\ORM\DataObject;
  *
  * @todo Allow for custom limiting/filtering of scaffoldFormField dropdown
  */
-class DBPrimaryKey extends DBInt
+class DBPrimaryKey extends DBVarchar
 {
     /**
      * @var DataObject
@@ -20,45 +20,18 @@ class DBPrimaryKey extends DBInt
     private static $default_search_filter_class = 'ExactMatchFilter';
 
     /**
-     * @var bool
-     */
-    protected $autoIncrement = true;
-
-    public function setAutoIncrement($autoIncrement)
-    {
-        $this->autoIncrement = $autoIncrement;
-        return $this;
-    }
-
-    public function getAutoIncrement()
-    {
-        return $this->autoIncrement;
-    }
-
-    public function requireField()
-    {
-        $spec = DB::get_schema()->IdColumn(false, $this->getAutoIncrement());
-        DB::require_field($this->getTable(), $this->getName(), $spec);
-    }
-
-    /**
      * @param string $name
      * @param DataObject $object The object that this is primary key for (should have a relation with $name)
      */
     public function __construct($name, $object = null)
     {
         $this->object = $object;
-        parent::__construct($name);
+        parent::__construct($name, 36);
     }
 
     public function scaffoldFormField($title = null, $params = null)
     {
         return null;
-    }
-
-    public function scaffoldSearchField($title = null)
-    {
-        parent::scaffoldFormField($title);
     }
 
     public function setValue($value, $record = null, $markChanged = true)
@@ -69,4 +42,9 @@ class DBPrimaryKey extends DBInt
             $this->object = $record;
         }
     }
+
+//    public function getIndexType()
+//    {
+//        return DBField::TYPE_UNIQUE;
+//    }
 }

@@ -371,11 +371,6 @@ abstract class DBSchemaManager
             }
         }
 
-        //DB ABSTRACTION: we need to convert this to a db-specific version:
-        if (!isset($fieldSchema['ID'])) {
-            $this->requireField($table, 'ID', $this->IdColumn(false, $hasAutoIncPK));
-        }
-
         // Create custom fields
         if ($fieldSchema) {
             foreach ($fieldSchema as $fieldName => $fieldSpec) {
@@ -393,11 +388,6 @@ abstract class DBSchemaManager
                 $fieldObj->setArrayValue($arrayValue);
 
                 $fieldObj->setTable($table);
-
-                if ($fieldObj instanceof DBPrimaryKey) {
-                    /** @var DBPrimaryKey $fieldObj */
-                    $fieldObj->setAutoIncrement($hasAutoIncPK);
-                }
 
                 $fieldObj->requireField();
             }
@@ -645,11 +635,6 @@ abstract class DBSchemaManager
             $specValue = $spec;
         }
 
-        // We need to get db-specific versions of the ID column:
-        if ($spec_orig == $this->IdColumn() || $spec_orig == $this->IdColumn(true)) {
-            $specValue = $this->IdColumn(true);
-        }
-
         if (!$newTable) {
             $fieldList = $this->fieldList($table);
             if (isset($fieldList[$field])) {
@@ -795,15 +780,6 @@ abstract class DBSchemaManager
             }
         }
     }
-
-    /**
-     * This returns the data type for the id column which is the primary key for each table
-     *
-     * @param boolean $asDbValue
-     * @param boolean $hasAutoIncPK
-     * @return string
-     */
-    abstract public function IdColumn($asDbValue = false, $hasAutoIncPK = true);
 
     /**
      * Checks a table's integrity and repairs it if necessary.

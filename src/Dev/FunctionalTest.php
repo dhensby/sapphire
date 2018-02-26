@@ -155,6 +155,7 @@ class FunctionalTest extends SapphireTest implements TestOnly
      */
     public function get(string $url, Session $session = null, array $headers = null, array $cookies = null) : HTTPResponse
     {
+        var_export("Fetching Link: " . $url);
         $this->cssParser = null;
         $response = $this->mainSession->get($url, $session, $headers, $cookies);
         if ($this->autoFollowRedirection && is_object($response) && $response->getHeader('Location')) {

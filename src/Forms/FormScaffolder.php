@@ -137,7 +137,7 @@ class FormScaffolder
         }
 
         // only add relational fields if an ID is present
-        if ($this->obj->ID) {
+        if ($this->obj->isInDB()) {
             // add has_many relation fields
             if ($this->obj->hasMany()
                     && ($this->includeRelations === true || isset($this->includeRelations['has_many']))) {

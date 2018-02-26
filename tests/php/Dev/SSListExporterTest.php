@@ -4,14 +4,18 @@ namespace SilverStripe\Dev\Tests;
 
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Dev\SSListExporter;
+use SilverStripe\Dev\Tests\SSListExporterTest\DummyDataObject;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataList;
-use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\View\ArrayData;
 
 class SSListExporterTest extends SapphireTest
 {
+
+    protected static $extra_dataobjects = [
+        DummyDataObject::class,
+    ];
 
     /**
      * @var SSListExporter
@@ -28,7 +32,7 @@ class SSListExporterTest extends SapphireTest
     {
         return [
             [ArrayList::class, false],
-            [DataObject::class, false],
+            [DummyDataObject::class, false],
             [DataList::class, Member::class],
             [ArrayData::class, false]
         ];
@@ -62,7 +66,8 @@ class SSListExporterTest extends SapphireTest
             'One' => 'Two'
         ];
 
-        $map = $this->exporter->toMap(DataObject::create($data));
+        $map = $this->exporter->toMap(DummyDataObject::create($data));
+        unset($map['ID']);
 
         $this->assertEquals($data, $map, 'Map should match data passed to DataObject');
     }

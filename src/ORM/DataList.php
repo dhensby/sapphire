@@ -931,17 +931,7 @@ class DataList extends ViewableData implements SS_List, Filterable, Sortable, Li
      */
     public function byIDs($ids)
     {
-        $intIDs = array();
-        foreach ($ids as $id) {
-            if (!is_numeric($id)) {
-                throw new InvalidArgumentException(
-                    'Invalid value passed to byIDs() in param array. All params have to be numeric or of type Integer.'
-                );
-            }
-            $intIDs[] = intval($id, 10);
-        }
-
-        return $this->filter('ID', $intIDs);
+        return $this->filter('ID', $ids);
     }
 
     /**
@@ -953,12 +943,7 @@ class DataList extends ViewableData implements SS_List, Filterable, Sortable, Li
      */
     public function byID($id)
     {
-        if (!is_numeric($id)) {
-            throw new InvalidArgumentException(
-                'Incorrect param type for $id passed to byID(). Numeric value is expected.'
-            );
-        }
-        return $this->filter('ID', intval($id, 10))->first();
+        return $this->filter('ID', $id)->first();
     }
 
     /**

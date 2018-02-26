@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM;
 
 use BadMethodCallException;
+use Ramsey\Uuid\Uuid;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\ORM\Queries\SQLDelete;
@@ -222,7 +223,7 @@ class ManyManyList extends RelationList
 
         // Determine ID of new record
         $itemID = null;
-        if (is_numeric($item)) {
+        if (!is_object($item)) {
             $itemID = $item;
         } elseif ($item instanceof $this->dataClass) {
             $itemID = $item->ID;
@@ -265,7 +266,9 @@ class ManyManyList extends RelationList
             $manipulation = array(
                 $this->joinTable => array(
                     'command' => $hasExisting ? 'update' : 'insert',
-                    'fields' => array()
+                    'fields' => array(
+                        'ID' => Uuid::uuid4()->toString(),
+                    )
                 )
             );
             if ($hasExisting) {
@@ -322,10 +325,6 @@ class ManyManyList extends RelationList
      */
     public function removeByID($itemID)
     {
-        if (!is_numeric($itemID)) {
-            throw new InvalidArgumentException("ManyManyList::removeById() expecting an ID");
-        }
-
         $query = new SQLDelete("\"{$this->joinTable}\"");
 
         if ($filter = $this->foreignIDWriteFilter($this->getForeignID())) {
@@ -393,10 +392,6 @@ class ManyManyList extends RelationList
         // Skip if no extrafields or unsaved record
         if (empty($this->extraFields) || empty($itemID)) {
             return $result;
-        }
-
-        if (!is_numeric($itemID)) {
-            throw new InvalidArgumentException('ManyManyList::getExtraData() passed a non-numeric child ID');
         }
 
         $cleanExtraFields = array();

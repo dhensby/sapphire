@@ -1,13 +1,16 @@
 SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\Person:
   joe:
+    ID: 1
     FirstName: Joe
     Surname: Bloggs
   jane:
+    ID: 2
     FirstName: Jane
     Surname: Doe
 
 SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\PeopleGroup:
   group:
+    ID: 1
     Name: My Group
     People:
       - =>SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\Person.joe
@@ -15,6 +18,7 @@ SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\PeopleGroup:
 
 SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\Category:
   category1:
+    ID: 1
     Name: Category 1
     People:
       - =>SilverStripe\Forms\Tests\GridField\GridFieldDetailFormTest\Person.joe

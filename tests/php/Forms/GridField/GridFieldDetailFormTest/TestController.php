@@ -48,7 +48,7 @@ class TestController extends Controller implements TestOnly
         $field->getConfig()->addComponent(new GridFieldViewButton());
         $field->getConfig()->addComponent(new GridFieldEditButton());
         /** @skipUpgrade */
-        $field->getConfig()->addComponent($gridFieldForm = new GridFieldDetailForm($this, 'Form'));
+        $field->getConfig()->addComponent($gridFieldForm = new GridFieldDetailForm('Form'));
         $field->getConfig()->addComponent(new GridFieldEditButton());
         /** @skipUpgrade */
         return new Form($this, 'Form', new FieldList($field), new FieldList());

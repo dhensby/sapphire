@@ -21,7 +21,7 @@ use SilverStripe\ORM\DataObject;
  * @param string $name
  * @param DataObject $object The object that the foreign key is stored on (should have a relation with $name)
  */
-class DBForeignKey extends DBInt
+class DBForeignKey extends DBVarchar
 {
 
     /**
@@ -36,7 +36,7 @@ class DBForeignKey extends DBInt
     public function __construct($name, $object = null)
     {
         $this->object = $object;
-        parent::__construct($name);
+        parent::__construct($name, 36);
     }
 
     public function scaffoldFormField($title = null, $params = null)

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Forms\Tests;
 
+use Ramsey\Uuid\Uuid;
 use SilverStripe\Forms\Tests\CheckboxSetFieldTest\Article;
 use SilverStripe\Forms\Tests\CheckboxSetFieldTest\Tag;
 use SilverStripe\ORM\ArrayList;
@@ -135,34 +136,51 @@ class CheckboxSetFieldTest extends SapphireTest
 
         /* Create a CheckboxSetField with 2 items selected.  Note that the array is a list of values */
         $field = new CheckboxSetField("Tags", "Test field", DataObject::get(Tag::class)->map());
-        $field->setValue(
-            array(
+        $field->setValue([
             $tag1->ID,
-            $tag2->ID
-            )
-        );
+            $tag2->ID,
+        ]);
 
         /* Saving should work */
         $field->saveInto($article);
 
-        $this->assertEquals(
-            array($tag1->ID,$tag2->ID),
-            DB::prepared_query(
-                "SELECT \"CheckboxSetFieldTest_TagID\"
+        $actualIDs = DB::prepared_query(
+            "SELECT \"CheckboxSetFieldTest_TagID\"
 				FROM \"CheckboxSetFieldTest_Article_Tags\"
 				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_ArticleID\" = ?",
-                array($article->ID)
-            )->column(),
+            array($article->ID)
+        )->column();
+        $expectedIDs = [
+            $tag1->ID,
+            $tag2->ID,
+        ];
+        sort($actualIDs);
+        sort($expectedIDs);
+
+        $this->assertEquals(
+            $expectedIDs,
+            $actualIDs,
             'Data shold be saved into CheckboxSetField manymany relation table on the "right end"'
         );
-        $this->assertEquals(
-            array($articleWithTags->ID,$article->ID),
-            DB::query(
-                "SELECT \"CheckboxSetFieldTest_ArticleID\"
+
+        $actualIDs = DB::query(
+            "SELECT \"CheckboxSetFieldTest_ArticleID\"
 				FROM \"CheckboxSetFieldTest_Article_Tags\"
-				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_TagID\" = $tag1->ID
+				WHERE \"CheckboxSetFieldTest_Article_Tags\".\"CheckboxSetFieldTest_TagID\" = '$tag1->ID'
 			"
-            )->column(),
+        )->column();
+
+        $expectedIDs = [
+            $articleWithTags->ID,
+            $article->ID,
+        ];
+
+        sort($actualIDs);
+        sort($expectedIDs);
+
+        $this->assertEquals(
+            $expectedIDs,
+            $actualIDs,
             'Data shold be saved into CheckboxSetField manymany relation table on the "left end"'
         );
     }
@@ -184,11 +202,13 @@ class CheckboxSetFieldTest extends SapphireTest
         $form->loadDataFrom($articleWithTags);
         $value = $field->Value();
         sort($value);
+        $expected = [
+            $tag1->ID,
+            $tag2->ID,
+        ];
+        sort($expected);
         $this->assertEquals(
-            array(
-                $tag1->ID,
-                $tag2->ID
-            ),
+            $expected,
             $value,
             'CheckboxSetField loads data from a manymany relationship in an object through Form->loadDataFrom()'
         );
@@ -199,11 +219,11 @@ class CheckboxSetFieldTest extends SapphireTest
         $field = new CheckboxSetField(
             'Content',
             'Content',
-            array(
-            'Test' => 'Test',
-            'Another' => 'Another',
-            'Something' => 'Something'
-            )
+            [
+                'Test' => 'Test',
+                'Another' => 'Another',
+                'Something' => 'Something',
+            ]
         );
         $article = new CheckboxSetFieldTest\Article();
         $field->setValue(array('Test' => 'Test', 'Another' => 'Another'));
@@ -212,7 +232,7 @@ class CheckboxSetFieldTest extends SapphireTest
 
         $dbValue = DB::query(
             sprintf(
-                'SELECT "Content" FROM "CheckboxSetFieldTest_Article" WHERE "ID" = %s',
+                'SELECT "Content" FROM "CheckboxSetFieldTest_Article" WHERE "ID" = \'%s\'',
                 $article->ID
             )
         )->value();
@@ -273,7 +293,7 @@ class CheckboxSetFieldTest extends SapphireTest
 
         // Invalid value should fail
         $validator = new RequiredFields();
-        $fakeID = CheckboxSetFieldTest\Tag::get()->max('ID') + 1;
+        $fakeID = Uuid::uuid4()->toString();
         $field->setValue(array($fakeID));
         $this->assertFalse(
             $field->validate($validator),
@@ -292,7 +312,7 @@ class CheckboxSetFieldTest extends SapphireTest
 
         // Multiple invalid values should fail
         $validator = new RequiredFields();
-        $fakeID = Tag::get()->max('ID') + 1;
+        $fakeID = Uuid::uuid4()->toString();
         $field->setValue(array($fakeID, $tag3->ID));
         $this->assertFalse(
             $field->validate($validator),

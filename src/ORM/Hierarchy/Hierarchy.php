@@ -17,7 +17,7 @@ use Exception;
  * DataObjects that use the Hierarchy extension can be be organised as a hierarchy, with children and parents. The most
  * obvious example of this is SiteTree.
  *
- * @property int $ParentID
+ * @property string $ParentID
  * @property DataObject|Hierarchy $owner
  * @method DataObject Parent()
  */
@@ -114,7 +114,7 @@ class Hierarchy extends DataExtension
         // Walk the hierarchy upwards until we reach the top, or until we reach the originating node again.
         $node = $owner;
         while ($node && $node->ParentID) {
-            if ((int)$node->ParentID === (int)$owner->ID) {
+            if ($node->ParentID === $owner->ID) {
                 // Hierarchy is looping.
                 $validationResult->addError(
                     _t(
@@ -311,8 +311,8 @@ class Hierarchy extends DataExtension
         $hideFromCMSTree = $this->owner->config()->hide_from_cms_tree;
         $baseClass = $this->owner->baseClass();
         $staged = DataObject::get($baseClass)
-                ->filter('ParentID', (int)$this->owner->ID)
-                ->exclude('ID', (int)$this->owner->ID);
+                ->filter('ParentID', $this->owner->ID)
+                ->exclude('ID', $this->owner->ID);
         if ($hideFromHierarchy) {
             $staged = $staged->exclude('ClassName', $hideFromHierarchy);
         }
@@ -344,8 +344,8 @@ class Hierarchy extends DataExtension
         $hideFromHierarchy = $this->owner->config()->hide_from_hierarchy;
         $hideFromCMSTree = $this->owner->config()->hide_from_cms_tree;
         $children = DataObject::get($this->owner->baseClass())
-            ->filter('ParentID', (int)$this->owner->ID)
-            ->exclude('ID', (int)$this->owner->ID)
+            ->filter('ParentID', $this->owner->ID)
+            ->exclude('ID', $this->owner->ID)
             ->setDataQueryParam(array(
                 'Versioned.mode' => $onlyDeletedFromStage ? 'stage_unique' : 'stage',
                 'Versioned.stage' => 'Live'

@@ -302,12 +302,12 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
         $groupList = self::groupList($memberID);
 
         if ($groupList) {
-            $groupCSV = implode(", ", $groupList);
+            $groupCSV = implode("', '", $groupList);
 
             $allowed = array_unique(DB::query("
 				SELECT \"Code\"
 				FROM \"Permission\"
-				WHERE \"Type\" = " . self::GRANT_PERMISSION . " AND \"GroupID\" IN ($groupCSV)
+				WHERE \"Type\" = " . self::GRANT_PERMISSION . " AND \"GroupID\" IN ('$groupCSV')
 
 				UNION
 
@@ -315,13 +315,13 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
 				FROM \"PermissionRoleCode\" PRC
 				INNER JOIN \"PermissionRole\" PR ON PRC.\"RoleID\" = PR.\"ID\"
 				INNER JOIN \"Group_Roles\" GR ON GR.\"PermissionRoleID\" = PR.\"ID\"
-				WHERE \"GroupID\" IN ($groupCSV)
+				WHERE \"GroupID\" IN ('$groupCSV')
 			")->column());
 
             $denied = array_unique(DB::query("
 				SELECT \"Code\"
 				FROM \"Permission\"
-				WHERE \"Type\" = " . self::DENY_PERMISSION . " AND \"GroupID\" IN ($groupCSV)
+				WHERE \"Type\" = " . self::DENY_PERMISSION . " AND \"GroupID\" IN ('$groupCSV')
 			")->column());
 
             return array_diff($allowed, $denied);
@@ -351,7 +351,7 @@ class Permission extends DataObject implements TemplateGlobalProvider, Resettabl
                 return $_SESSION['Permission_groupList'][$member->ID];
             }
         } else {
-            $member = DataObject::get_by_id("SilverStripe\\Security\\Member", $memberID);
+            $member = DataObject::get_by_id(Member::class, $memberID);
         }
 
         if ($member) {

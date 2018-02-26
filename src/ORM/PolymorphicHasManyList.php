@@ -60,11 +60,11 @@ class PolymorphicHasManyList extends HasManyList
      *
      * It does so by setting the relationFilters.
      *
-     * @param DataObject|int $item The DataObject to be added, or its ID
+     * @param DataObject|string $item The DataObject to be added, or its ID
      */
     public function add($item)
     {
-        if (is_numeric($item)) {
+        if (is_string($item)) {
             $item = DataObject::get_by_id($this->dataClass, $item);
         } elseif (!($item instanceof $this->dataClass)) {
             user_error(

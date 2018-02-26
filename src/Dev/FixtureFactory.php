@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Dev;
 
+use Ramsey\Uuid\Uuid;
 use SilverStripe\ORM\Queries\SQLInsert;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
@@ -104,13 +105,15 @@ class FixtureFactory
      */
     public function createRaw($table, $identifier, $data)
     {
-        $fields = array();
+        $fields = array(
+            'ID' => Uuid::uuid4()->toString(),
+        );
         foreach ($data as $fieldName => $fieldVal) {
             $fields["\"{$fieldName}\""] = $this->parseValue($fieldVal);
         }
         $insert = new SQLInsert("\"{$table}\"", $fields);
         $insert->execute();
-        $id = DB::get_generated_id($table);
+        $id = $fields['ID'];
         $this->fixtures[$table][$identifier] = $id;
 
         return $id;

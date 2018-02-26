@@ -61,13 +61,14 @@ class YamlFixtureTest extends SapphireTest
         $fixture = Injector::inst()->create(YamlFixture::class, $absPath);
         $fixture->writeInto($factory);
 
-        $this->assertGreaterThan(0, $factory->getId(TestDataObject::class, "testobject1"));
+        $this->assertNotEmpty($factory->getId(TestDataObject::class, "testobject1"));
         $object1 = DataObject::get_by_id(
             TestDataObject::class,
             $factory->getId(TestDataObject::class, "testobject1")
         );
-        $this->assertTrue(
-            $object1->ManyManyRelation()->Count() == 2,
+        $this->assertCount(
+            2,
+            $object1->ManyManyRelation(),
             "Should be two items in this relationship"
         );
         $this->assertGreaterThan(0, $factory->getId(TestDataObject::class, "testobject2"));
@@ -75,8 +76,9 @@ class YamlFixtureTest extends SapphireTest
             TestDataObject::class,
             $factory->getId(TestDataObject::class, "testobject2")
         );
-        $this->assertTrue(
-            $object2->ManyManyRelation()->Count() == 1,
+        $this->assertCount(
+            1,
+            $object2->ManyManyRelation(),
             "Should be one item in this relationship"
         );
     }
@@ -89,8 +91,7 @@ class YamlFixtureTest extends SapphireTest
         $fixture = Injector::inst()->create(YamlFixture::class, $absPath);
         $fixture->writeInto($factory);
 
-        $this->assertGreaterThan(
-            0,
+        $this->assertNotEmpty(
             $factory->getId(TestDataObject::class, "testobject1")
         );
     }

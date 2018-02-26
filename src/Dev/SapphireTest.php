@@ -419,9 +419,9 @@ class SapphireTest extends TestCase implements TestOnly
      *
      * @param string $className The data class or table name, as specified in your fixture file.  Parent classes won't work
      * @param string $identifier The identifier string, as provided in your fixture file
-     * @return int
+     * @return string
      */
-    protected function idFromFixture(string $className, string $identifier) : int
+    protected function idFromFixture(string $className, string $identifier) : string
     {
         $id = $this->getFixtureFactory()->getId($className, $identifier);
 
@@ -1079,14 +1079,20 @@ class SapphireTest extends TestCase implements TestOnly
     /**
      * Log in as the given member
      *
-     * @param Member|int|string $member The ID, fixture codename, or Member object of the member that you want to log in
+     * @param Member|string $member The ID, fixture codename, or Member object of the member that you want to log in
      */
-    public function logInAs($member) : void
+    public function logInAs($memberID) : void
     {
-        if (is_numeric($member)) {
-            $member = DataObject::get_by_id(Member::class, $member);
-        } elseif (!is_object($member)) {
-            $member = $this->objFromFixture(Member::class, $member);
+        $member = null;
+        if ($memberID instanceof Member) {
+            $member = $memberID;
+        } else {
+            if (is_string($memberID)) {
+                $member = DataObject::get_by_id(Member::class, $memberID);
+            }
+            if (!$member) {
+                $member = $this->objFromFixture(Member::class, $memberID);
+            }
         }
         Injector::inst()->get(IdentityStore::class)->logIn($member);
     }

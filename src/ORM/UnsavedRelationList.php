@@ -98,8 +98,7 @@ class UnsavedRelationList extends ArrayList implements Relation
      */
     public function push($item, $extraFields = null)
     {
-        if ((is_object($item) && !$item instanceof $this->dataClass)
-            || (!is_object($item) && !is_numeric($item))) {
+        if ((is_object($item) && !$item instanceof $this->dataClass)) {
             throw new InvalidArgumentException(
                 "UnsavedRelationList::add() expecting a $this->dataClass object, or ID value",
                 E_USER_ERROR
@@ -222,7 +221,7 @@ class UnsavedRelationList extends ArrayList implements Relation
     {
         // Get a list of IDs of our current items - if it's not a number then object then assume it's a DO.
         $ids = array_map(function ($obj) {
-            return is_numeric($obj) ? $obj : $obj->ID;
+            return !is_object($obj) ? $obj : $obj->ID;
         }, $this->items);
 
         // Strip out duplicates and anything resolving to False.

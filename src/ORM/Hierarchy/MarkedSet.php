@@ -611,7 +611,7 @@ class MarkedSet
     /**
      * Mark the children of the DataObject with the given ID.
      *
-     * @param int  $id   ID of parent node
+     * @param string  $id   ID of parent node
      * @param bool $open If this is true, mark the parent node as opened
      * @return bool
      */

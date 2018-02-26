@@ -6,6 +6,7 @@ use BadMethodCallException;
 use Exception;
 use InvalidArgumentException;
 use LogicException;
+use Ramsey\Uuid\Uuid;
 use SilverStripe\Control\HTTP;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
@@ -18,6 +19,7 @@ use SilverStripe\Forms\FormField;
 use SilverStripe\Forms\FormScaffolder;
 use SilverStripe\i18n\i18n;
 use SilverStripe\i18n\i18nEntityProvider;
+use SilverStripe\ORM\Connect\DatabaseException;
 use SilverStripe\ORM\Connect\MySQLSchemaManager;
 use SilverStripe\ORM\FieldType\DBClassName;
 use SilverStripe\ORM\FieldType\DBComposite;
@@ -26,6 +28,7 @@ use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\Filters\SearchFilter;
 use SilverStripe\ORM\Queries\SQLDelete;
 use SilverStripe\ORM\Queries\SQLInsert;
+use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\ORM\Search\SearchContext;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
@@ -310,7 +313,6 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         // Set the fields data.
         if (!$record) {
             $record = array(
-                'ID' => 0,
                 'ClassName' => static::class,
                 'RecordClassName' => static::class
             );
@@ -342,11 +344,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
             // To do: this kind of clean-up should be done on all numeric fields, in some relatively
             // performant manner
             if ($v !== null) {
-                if ($k == 'ID' && is_numeric($v)) {
-                    $this->record[$k] = (int)$v;
-                } else {
-                    $this->record[$k] = $v;
-                }
+                $this->record[$k] = $v;
             }
         }
 
@@ -374,7 +372,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Must be called after parent constructor
-        if (!$isSingleton && (!isset($this->record['ID']) || !$this->record['ID'])) {
+        if (!$isSingleton && empty($this->record['ID'])) {
             $this->populateDefaults();
         }
 
@@ -405,9 +403,9 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
     {
         $map = $this->toMap();
         unset($map['Created']);
+        unset($map['ID']);
         /** @var static $clone */
         $clone = Injector::inst()->create(static::class, $map, false, $this->getSourceQueryParams());
-        $clone->ID = 0;
 
         $clone->invokeWithExtensions('onBeforeDuplicate', $this, $doWrite, $manyMany);
         if ($manyMany) {
@@ -596,7 +594,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
      */
     public function exists()
     {
-        return (isset($this->record['ID']) && $this->record['ID'] > 0);
+        return $this->isInDB();
     }
 
     /**
@@ -1107,6 +1105,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
      */
     public function populateDefaults()
     {
+        $this->ID = Uuid::uuid4()->toString();
         $classes = array_reverse(ClassInfo::ancestry($this));
 
         foreach ($classes as $class) {
@@ -1282,12 +1281,11 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         }
 
         // Perform an insert on the base table
-        $insert = new SQLInsert('"'.$baseTable.'"');
+        $insert = new SQLInsert('"' . $baseTable . '"');
         $insert
+            ->assign('"ID"', $this->ID)
             ->assign('"Created"', $now)
             ->execute();
-        $this->changed['ID'] = self::CHANGE_VALUE;
-        $this->record['ID'] = DB::get_generated_id($baseTable);
     }
 
     /**
@@ -1468,7 +1466,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
         $this->onAfterDelete();
 
         $this->OldID = $this->ID;
-        $this->ID = 0;
+        $this->ID = Uuid::uuid4()->toString();
     }
 
     /**
@@ -2198,7 +2196,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
      */
     protected function loadLazyFields($class = null)
     {
-        if (!$this->isInDB() || !is_numeric($this->ID)) {
+        if (!$this->isInDB()) {
             return false;
         }
 
@@ -2962,10 +2960,6 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
      */
     public static function get_by_id($callerClass, $id, $cache = true)
     {
-        if (!is_numeric($id)) {
-            user_error("DataObject::get_by_id passed a non-numeric ID #$id", E_USER_WARNING);
-        }
-
         // Pass to get_one
         $column = static::getSchema()->sqlColumnForField($callerClass, 'ID');
         return DataObject::get_one($callerClass, array($column => $id), $cache);
@@ -3125,8 +3119,9 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
                 // Build fields
                 $manymanyFields = array(
-                    $parentField => "Int",
-                    $childField => "Int",
+                    'ID' => 'PrimaryKey',
+                    $parentField => 'ForeignKey',
+                    $childField => 'ForeignKey',
                 );
                 if (isset($extras[$component])) {
                     $manymanyFields = array_merge($manymanyFields, $extras[$component]);
@@ -3434,7 +3429,10 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
      */
     public function isInDB()
     {
-        return is_numeric($this->ID) && $this->ID > 0;
+        $baseTable = DataObject::getSchema()->baseDataTable(static::class);
+        return (new SQLSelect("COUNT(\"ID\")", "\"$baseTable\"", [
+            "ID = ?" => $this->ID,
+        ]))->execute()->value() > 0;
     }
 
     /*

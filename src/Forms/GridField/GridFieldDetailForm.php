@@ -3,6 +3,7 @@
 namespace SilverStripe\Forms\GridField;
 
 use Closure;
+use Ramsey\Uuid\Uuid;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Control\RequestHandler;
@@ -99,10 +100,10 @@ class GridFieldDetailForm implements GridField_URLHandler
         $requestHandler = $gridField->getForm()->getController();
 
         /** @var DataObject $record */
-        if (is_numeric($request->param('ID'))) {
+        if (Uuid::isValid($request->param('ID'))) {
             /** @var Filterable $dataList */
             $dataList = $gridField->getList();
-            $record = $dataList->byID($request->param("ID"));
+            $record = $dataList->byID($request->param('ID'));
         } else {
             $record = Injector::inst()->create($gridField->getModelClass());
         }

@@ -12,8 +12,8 @@ class DBPolymorphicForeignKey extends DBComposite
     private static $index = true;
 
     private static $composite_db = array(
-        'ID' => 'Int',
-        'Class' => "DBClassName('" . DataObject::class . "', ['index' => false])"
+        'ID' => 'Varchar(36)',
+        'Class' => "DBClassName('" . DataObject::class . "', ['index' => false])",
     );
 
     public function scaffoldFormField($title = null, $params = null)
@@ -48,7 +48,7 @@ class DBPolymorphicForeignKey extends DBComposite
     /**
      * Gets the value of the "ID" this key points to
      *
-     * @return integer
+     * @return string
      */
     public function getIDValue()
     {
@@ -58,7 +58,7 @@ class DBPolymorphicForeignKey extends DBComposite
     /**
      * Sets the value of the "ID" this key points to
      *
-     * @param integer $value
+     * @param string $value
      * @param boolean $markChanged Mark this field as changed?
      */
     public function setIDValue($value, $markChanged = true)

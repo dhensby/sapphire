@@ -144,9 +144,9 @@ class GridFieldDeleteActionTest extends SapphireTest
         );
         $request->setSession($session);
         $this->gridField->gridFieldAlterAction(array('StateID'=>$stateID), $this->form, $request);
-        $this->assertEquals(
+        $this->assertCount(
             3,
-            $this->list->count(),
+            $this->list,
             'User should\'t be able to delete records without correct permissions.'
         );
     }
@@ -178,7 +178,7 @@ class GridFieldDeleteActionTest extends SapphireTest
         );
         $request->setSession($session);
         $this->gridField->gridFieldAlterAction(array('StateID'=>$stateID), $this->form, $request);
-        $this->assertEquals(2, $this->list->count(), 'User should be able to delete records with ADMIN permission.');
+        $this->assertCount(2, $this->list, 'User should be able to delete records with ADMIN permission.');
     }
 
     public function testDeleteActionRemoveRelation()

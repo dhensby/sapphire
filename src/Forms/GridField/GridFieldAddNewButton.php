@@ -34,6 +34,11 @@ class GridFieldAddNewButton implements GridField_HTMLProvider
         $this->targetFragment = $targetFragment;
     }
 
+    /**
+     * @param GridField $gridField
+     *
+     * @return array
+     */
     public function getHTMLFragments($gridField)
     {
         $singleton = singleton($gridField->getModelClass());

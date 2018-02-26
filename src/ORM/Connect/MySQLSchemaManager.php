@@ -29,9 +29,6 @@ class MySQLSchemaManager extends DBSchemaManager
             $addOptions = "ENGINE=InnoDB";
         }
 
-        if (!isset($fields['ID'])) {
-            $fields['ID'] = "int(11) not null auto_increment";
-        }
         if ($fields) {
             foreach ($fields as $k => $v) {
                 $fieldSchemas .= "\"$k\" $v,\n";
@@ -622,11 +619,6 @@ class MySQLSchemaManager extends DBSchemaManager
     public function year($values)
     {
         return 'year(4)';
-    }
-
-    public function IdColumn($asDbValue = false, $hasAutoIncPK = true)
-    {
-        return 'int(11) not null auto_increment';
     }
 
     /**

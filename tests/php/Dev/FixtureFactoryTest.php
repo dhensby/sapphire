@@ -27,7 +27,7 @@ class FixtureFactoryTest extends SapphireTest
             array('Name' => 'My Name')
         );
         $this->assertNotNull($id);
-        $this->assertGreaterThan(0, $id);
+        $this->assertNotEmpty($id);
         $obj = TestDataObject::get()->find('ID', $id);
         $this->assertNotNull($obj);
         $this->assertEquals('My Name', $obj->Name);

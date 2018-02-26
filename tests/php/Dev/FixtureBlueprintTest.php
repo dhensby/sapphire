@@ -82,7 +82,7 @@ class FixtureBlueprintTest extends SapphireTest
         $blueprint = new FixtureBlueprint(TestDataObject::class);
         $obj = $blueprint->createObject('one');
         $this->assertNotNull($obj);
-        $this->assertGreaterThan(0, $obj->ID);
+        $this->assertNotEmpty($obj->ID);
         $this->assertEquals('', $obj->Name);
     }
 
@@ -91,7 +91,7 @@ class FixtureBlueprintTest extends SapphireTest
         $blueprint = new FixtureBlueprint(TestDataObject::class);
         $obj = $blueprint->createObject('one', array('Name' => 'My Name'));
         $this->assertNotNull($obj);
-        $this->assertGreaterThan(0, $obj->ID);
+        $this->assertNotEmpty($obj->ID);
         $this->assertEquals('My Name', $obj->Name);
     }
 
